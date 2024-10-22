@@ -1,5 +1,7 @@
 // popup.js
 
+const MAX_SESSIONS_DISPLAY = 5; // Максимальное количество сессий для отображения
+
 // Функция для преобразования временной метки в удобный формат
 function formatTimestamp(timestamp) {
 	const date = new Date(timestamp);
@@ -23,13 +25,25 @@ function formatTimestamp(timestamp) {
 function loadSessions() {
 	// Загрузка автоматических сессий
 	chrome.storage.local.get(['autoSessions'], (result) => {
-		const autoSessions = result.autoSessions || [];
+		let autoSessions = result.autoSessions || [];
+		// Ограничиваем количество отображаемых сессий
+		if (autoSessions.length > MAX_SESSIONS_DISPLAY) {
+			autoSessions = autoSessions.slice(
+				autoSessions.length - MAX_SESSIONS_DISPLAY
+			);
+		}
 		populateSessionList('autoSessions', autoSessions);
 	});
 
 	// Загрузка сессий, сохранённых при изменении вкладок
 	chrome.storage.local.get(['changeSessions'], (result) => {
-		const changeSessions = result.changeSessions || [];
+		let changeSessions = result.changeSessions || [];
+		// Ограничиваем количество отображаемых сессий
+		if (changeSessions.length > MAX_SESSIONS_DISPLAY) {
+			changeSessions = changeSessions.slice(
+				changeSessions.length - MAX_SESSIONS_DISPLAY
+			);
+		}
 		populateSessionList('changeSessions', changeSessions);
 	});
 }
@@ -54,14 +68,14 @@ function populateSessionList(elementId, sessions) {
 		const sessionItem = document.createElement('div');
 		sessionItem.className = 'session-item';
 		sessionItem.innerHTML = `
-					<div class="session-header">
-							<span>${formatTimestamp(session.timestamp)}</span>
-							<button class="button-small view-btn" data-index="${index}" data-type="${
+            <div class="session-header">
+                <span>${formatTimestamp(session.timestamp)}</span>
+                <button class="button-small view-btn" data-index="${index}" data-type="${
 			elementId === 'autoSessions' ? 'autoSessions' : 'changeSessions'
 		}">View</button>
-					</div>
-					<div class="session-details" style="display: none;"></div>
-			`;
+            </div>
+            <div class="session-details" style="display: none;"></div>
+        `;
 		fragment.appendChild(sessionItem);
 	});
 
@@ -93,12 +107,12 @@ function viewSessionDetails(sessionIndex, sessionType, button) {
 			const windowItem = document.createElement('div');
 			windowItem.className = 'window-item';
 			windowItem.innerHTML = `
-							<p>Window ${index + 1} (${window.tabs.length} tabs)</p>
-							<ul>
-									${window.tabs.map((tab) => `<li>${tab}</li>`).join('')}
-							</ul>
-							<button class="button-small restore-btn" data-window-index="${index}" data-session-type="${sessionType}">Restore this Window</button>
-					`;
+                <p>Window ${index + 1} (${window.tabs.length} tabs)</p>
+                <ul>
+                    ${window.tabs.map((tab) => `<li>${tab}</li>`).join('')}
+                </ul>
+                <button class="button-small restore-btn" data-window-index="${index}" data-session-type="${sessionType}">Restore this Window</button>
+            `;
 			detailsDiv.appendChild(windowItem);
 		});
 

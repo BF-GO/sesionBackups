@@ -1,33 +1,52 @@
 // background.js
 
+const MAX_SESSIONS = 5; // Максимальное количество сессий
+const SAVE_DEBOUNCE_DELAY = 1000; // 1 секунда
+
+let saveTimeout = null;
+
 // Функция для сохранения сессии (тип 'auto' или 'change')
 function saveSession(type) {
-	chrome.windows.getAll({ populate: true }, (windows) => {
-		const session = {
-			timestamp: new Date().toISOString(),
-			windows: windows.map((window) => ({
-				id: window.id,
-				tabs: window.tabs.map((tab) => tab.url),
-			})),
-		};
+	if (saveTimeout) {
+		clearTimeout(saveTimeout);
+	}
 
-		const storageKey = type === 'auto' ? 'autoSessions' : 'changeSessions';
+	saveTimeout = setTimeout(() => {
+		chrome.windows.getAll({ populate: true }, (windows) => {
+			const session = {
+				timestamp: new Date().toISOString(),
+				windows: windows.map((window) => ({
+					id: window.id,
+					tabs: window.tabs.map((tab) => tab.url),
+				})),
+			};
 
-		chrome.storage.local.get([storageKey], (result) => {
-			const sessions = result[storageKey] || [];
-			sessions.push(session);
-			chrome.storage.local.set({ [storageKey]: sessions }, () => {
-				if (chrome.runtime.lastError) {
-					console.error(
-						`Error saving ${type} session:`,
-						chrome.runtime.lastError
-					);
-				} else {
-					console.log(`Session of type ${type} saved successfully`);
+			const storageKey = type === 'auto' ? 'autoSessions' : 'changeSessions';
+
+			chrome.storage.local.get([storageKey], (result) => {
+				let sessions = result[storageKey] || [];
+				sessions.push(session);
+
+				// Ограничение количества сессий до MAX_SESSIONS
+				if (sessions.length > MAX_SESSIONS) {
+					sessions = sessions.slice(sessions.length - MAX_SESSIONS);
 				}
+
+				chrome.storage.local.set({ [storageKey]: sessions }, () => {
+					if (chrome.runtime.lastError) {
+						console.error(
+							`Error saving ${type} session:`,
+							chrome.runtime.lastError
+						);
+					} else {
+						console.log(`Session of type ${type} saved successfully`);
+					}
+				});
 			});
 		});
-	});
+
+		saveTimeout = null;
+	}, SAVE_DEBOUNCE_DELAY);
 }
 
 // Функция для обновления таймера авто-сохранения
