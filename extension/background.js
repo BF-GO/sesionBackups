@@ -17,7 +17,10 @@ function saveSession(type) {
 				timestamp: new Date().toISOString(),
 				windows: windows.map((window) => ({
 					id: window.id,
-					tabs: window.tabs.map((tab) => tab.url),
+					tabs: window.tabs.map((tab) => ({
+						url: tab.url,
+						title: tab.title || tab.url, // Сохраняем заголовок вкладки
+					})),
 				})),
 			};
 

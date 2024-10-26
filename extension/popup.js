@@ -260,7 +260,16 @@ document.addEventListener('DOMContentLoaded', () => {
 									<button class="button-small toggle-tabs-btn">Show Tabs</button>
 									<div class="tabs-container" style="display: none;">
 											<ul>
-													${window.tabs.map((tab) => `<li>${tab}</li>`).join('')}
+													${window.tabs
+														.map(
+															(tab) =>
+																`<li><a href="${
+																	tab.url
+																}" target="_blank" title="${escapeHtml(
+																	tab.title
+																)}">${escapeHtml(tab.title)}</a></li>`
+														)
+														.join('')}
 											</ul>
 											<button class="button-small restore-btn" data-window-index="${index}" data-session-type="${sessionType}" data-session-index="${sessionIndex}">Restore this Window</button>
 									</div>
@@ -298,8 +307,8 @@ document.addEventListener('DOMContentLoaded', () => {
 	function restoreWindow(tabs) {
 		if (tabs.length === 0) return; // Проверяем, есть ли вкладки для восстановления
 
-		const firstTab = tabs[0];
-		const otherTabs = tabs.slice(1);
+		const firstTab = tabs[0].url;
+		const otherTabs = tabs.slice(1).map((tab) => tab.url);
 
 		// Создаём новое окно с первой вкладкой
 		chrome.windows.create({ url: firstTab, state: 'normal' }, (newWindow) => {
@@ -361,6 +370,20 @@ document.addEventListener('DOMContentLoaded', () => {
 					alert(`${title}: ${message}`);
 				}
 			}
+		});
+	}
+
+	// Функция для экранирования HTML-сущностей
+	function escapeHtml(text) {
+		const map = {
+			'&': '&amp;',
+			'<': '&lt;',
+			'>': '&gt;',
+			'"': '&quot;',
+			"'": '&#039;',
+		};
+		return text.replace(/[&<>"']/g, function (m) {
+			return map[m];
 		});
 	}
 

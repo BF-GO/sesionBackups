@@ -1,5 +1,3 @@
-/* styles.css */
-
 /* Общие стили */
 :root {
 	/* Светлая тема */
@@ -340,6 +338,7 @@ li {
 		gap: 5px;
 	}
 }
+
 /* Кнопка для отображения/скрытия вкладок */
 .toggle-tabs-btn {
 	margin-top: 10px;
@@ -377,4 +376,137 @@ li {
 .tabs-container[style*='display: block'] {
 	opacity: 1;
 	max-height: 1000px; /* Достаточно большое значение для обеспечения плавного раскрытия */
+}
+
+.tabs-container ul li a {
+	display: block;
+	max-width: 250px; /* Максимальная ширина ссылки, можно настроить по необходимости */
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	text-decoration: none;
+	color: var(--primary-color);
+	transition: color 0.3s;
+}
+
+.tabs-container ul li a:hover {
+	color: var(--primary-hover);
+	text-decoration: underline;
+}
+
+/* Улучшение списка вкладок */
+.tabs-container ul li {
+	margin-bottom: 5px;
+	padding: 5px 0;
+}
+
+/* Общее улучшение внешнего вида вкладок */
+.tabs-container ul {
+	list-style-type: none;
+	padding-left: 0;
+}
+
+.tabs-container ul li a {
+	display: block;
+	padding: 8px 12px;
+	border-radius: 4px;
+}
+
+.tabs-container ul li a:hover {
+	background-color: var(--session-item-hover-bg);
+}
+
+/* Стилизация скроллбаров для браузеров на основе WebKit */
+body::-webkit-scrollbar,
+html::-webkit-scrollbar,
+.session-list::-webkit-scrollbar,
+.tabs-container::-webkit-scrollbar {
+	width: 6px; /* Ширина вертикального скроллбара */
+	height: 6px; /* Высота горизонтального скроллбара */
+}
+
+body::-webkit-scrollbar-track,
+html::-webkit-scrollbar-track,
+.session-list::-webkit-scrollbar-track,
+.tabs-container::-webkit-scrollbar-track {
+	background: transparent; /* Цвет трека скроллбара */
+}
+
+body::-webkit-scrollbar-thumb,
+html::-webkit-scrollbar-thumb,
+.session-list::-webkit-scrollbar-thumb,
+.tabs-container::-webkit-scrollbar-thumb {
+	background-color: rgba(0, 0, 0, 0.2); /* Цвет ползунка скроллбара */
+	border-radius: 3px; /* Радиус скругления ползунка */
+	border: 1px solid transparent; /* Добавление границы для отступа */
+}
+
+body::-webkit-scrollbar-thumb:hover,
+html::-webkit-scrollbar-thumb:hover,
+.session-list::-webkit-scrollbar-thumb:hover,
+.tabs-container::-webkit-scrollbar-thumb:hover {
+	background-color: rgba(0, 0, 0, 0.4); /* Цвет ползунка при наведении */
+}
+
+/* Скрытие стрелок скроллбаров (не поддерживается напрямую) */
+body::-webkit-scrollbar-button,
+html::-webkit-scrollbar-button,
+.session-list::-webkit-scrollbar-button,
+.tabs-container::-webkit-scrollbar-button {
+	display: none;
+}
+
+/* Стилизация скроллбаров для Firefox */
+body,
+html,
+.session-list,
+.tabs-container {
+	scrollbar-width: thin; /* Узкая полоса прокрутки */
+	scrollbar-color: rgba(0, 0, 0, 0.2) transparent; /* Цвет ползунка и трека */
+}
+
+body:hover,
+html:hover,
+.session-list:hover,
+.tabs-container:hover {
+	scrollbar-color: rgba(0, 0, 0, 0.4) transparent; /* Цвет ползунка при наведении */
+}
+
+/* Стилизация ссылок вкладок с ограничением длины текста */
+.tabs-container ul li a {
+	display: block;
+	max-width: 250px; /* Максимальная ширина ссылки, можно настроить по необходимости */
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	text-decoration: none;
+	color: var(--primary-color);
+	transition: color 0.3s;
+}
+
+.tabs-container ul li a:hover {
+	color: var(--primary-hover);
+	text-decoration: underline;
+}
+
+/* Улучшение списка вкладок */
+.tabs-container ul li {
+	margin-bottom: 5px;
+	padding: 5px 0;
+}
+
+/* Общее улучшение внешнего вида вкладок */
+.tabs-container ul {
+	list-style-type: none;
+	padding-left: 0;
+}
+
+.tabs-container ul li a {
+	display: block;
+	padding: 8px 12px;
+	border-radius: 4px;
+}
+
+.tabs-container ul li a:hover {
+	background-color: var(--session-item-hover-bg);
 }
