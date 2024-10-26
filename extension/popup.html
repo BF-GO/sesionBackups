@@ -1,58 +1,90 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 	<head>
 		<meta charset="UTF-8" />
-		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 		<title>Session Saver</title>
 		<link rel="stylesheet" href="styles.css" />
 	</head>
 	<body>
-		<h1>Session Saver</h1>
-
-		<div class="sessions-container">
-			<div class="session-list" id="autoSessions">
-				<h2>Automatic Sessions</h2>
-				<p>No sessions available</p>
-			</div>
-
-			<div class="session-list" id="changeSessions">
-				<h2>Change-Triggered Sessions</h2>
-				<p>No sessions available</p>
-			</div>
+		<!-- Контейнер для динамического содержимого -->
+		<div id="contentContainer">
+			<!-- Содержимое будет загружено сюда -->
 		</div>
 
-		<div class="controls">
-			<button id="saveBtn" class="button">Save Current Session</button>
-
-			<div class="interval-container">
-				<label for="intervalInput">Auto Backup Interval (minutes):</label>
-				<input type="number" id="intervalInput" min="1" value="10" />
-			</div>
-
-			<div class="notification-toggle">
-				<label class="toggle-label">
-					<span>Push Notifications:</span>
-					<label class="switch">
-						<input type="checkbox" id="notificationSwitch" />
-						<span class="slider"></span>
-					</label>
-				</label>
-			</div>
-
-			<div class="theme-toggle-container">
-				<label class="toggle-label" for="themeSwitch">
-					<span>Theme:</span>
-					<div class="theme-icons">
-						<span class="sun-icon">☀️</span>
-						<label class="switch">
-							<input type="checkbox" id="themeSwitch" />
-							<span class="slider"></span>
-						</label>
-						<span class="moon-icon">🌙</span>
+		<!-- Шаблоны, скрытые от отображения -->
+		<template id="mainContentTemplate">
+			<!-- Основное содержимое -->
+			<div class="main-content">
+				<img
+					src="icons/gear.png"
+					alt="Settings"
+					class="settings-icon"
+					id="settingsIcon"
+				/>
+				<h1>Session Saver</h1>
+				<div class="sessions-container">
+					<!-- Списки сессий будут загружены здесь -->
+					<div class="session-list" id="autoSessions">
+						<h2>Automatic Sessions</h2>
+						<p>No sessions available</p>
 					</div>
-				</label>
+					<div class="session-list" id="changeSessions">
+						<h2>Change-Triggered Sessions</h2>
+						<p>No sessions available</p>
+					</div>
+				</div>
+				<div class="controls">
+					<button id="saveBtn" class="button">Save Current Session</button>
+				</div>
 			</div>
-		</div>
+		</template>
+
+		<template id="settingsTemplate">
+			<!-- Содержимое настроек -->
+			<div class="settings-content">
+				<div class="header">
+					<div class="back-button" id="backBtn">
+						<img src="icons/back.png" alt="Back" />
+					</div>
+					<h2>Settings</h2>
+				</div>
+				<div class="settings-items">
+					<div class="setting-item">
+						<img src="icons/time.png" alt="Interval" class="setting-icon" />
+						<label for="intervalInput">Auto Backup Interval (minutes):</label>
+						<input type="number" id="intervalInput" min="1" value="10" />
+					</div>
+					<div class="setting-item notification-toggle">
+						<img
+							src="icons/notification.png"
+							alt="Notifications"
+							class="setting-icon"
+						/>
+						<label class="toggle-label">
+							<span>Push Notifications:</span>
+							<label class="switch">
+								<input type="checkbox" id="notificationSwitch" />
+								<span class="slider"></span>
+							</label>
+						</label>
+					</div>
+					<div class="setting-item theme-toggle-container">
+						<!-- Удалена иконка темы -->
+						<label class="toggle-label" for="themeSwitch">
+							<span>Theme:</span>
+							<div class="theme-icons">
+								<img src="icons/sun.png" alt="Light Theme" class="theme-icon" />
+								<label class="switch">
+									<input type="checkbox" id="themeSwitch" />
+									<span class="slider"></span>
+								</label>
+								<img src="icons/moon.png" alt="Dark Theme" class="theme-icon" />
+							</div>
+						</label>
+					</div>
+				</div>
+			</div>
+		</template>
 
 		<script src="popup.js"></script>
 	</body>
