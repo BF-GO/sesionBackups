@@ -8,7 +8,7 @@
 	<body>
 		<!-- Контейнер для динамического содержимого -->
 		<div id="contentContainer">
-			<!-- Содержимое будет загружено сюда -->
+			<!-- Содержимое будет загружено сюда через JavaScript -->
 		</div>
 
 		<!-- Шаблоны, скрытые от отображения -->
@@ -49,38 +49,50 @@
 					<h2>Settings</h2>
 				</div>
 				<div class="settings-items">
+					<!-- Auto Backup Interval Setting -->
 					<div class="setting-item">
 						<img src="icons/time.png" alt="Interval" class="setting-icon" />
 						<label for="intervalInput">Auto Backup Interval (minutes):</label>
 						<input type="number" id="intervalInput" min="1" value="10" />
 					</div>
+
+					<!-- Push Notifications Setting -->
 					<div class="setting-item notification-toggle">
 						<img
 							src="icons/notification.png"
 							alt="Notifications"
 							class="setting-icon"
 						/>
-						<label class="toggle-label">
-							<span>Push Notifications:</span>
-							<label class="switch">
-								<input type="checkbox" id="notificationSwitch" />
-								<span class="slider"></span>
-							</label>
+						<span class="toggle-label">Push Notifications:</span>
+						<label class="switch">
+							<input type="checkbox" id="notificationSwitch" />
+							<span class="slider"></span>
 						</label>
 					</div>
+
+					<!-- Theme Setting -->
 					<div class="setting-item theme-toggle-container">
-						<!-- Удалена иконка темы -->
-						<label class="toggle-label" for="themeSwitch">
-							<span>Theme:</span>
-							<div class="theme-icons">
-								<img src="icons/sun.png" alt="Light Theme" class="theme-icon" />
-								<label class="switch">
-									<input type="checkbox" id="themeSwitch" />
-									<span class="slider"></span>
-								</label>
-								<img src="icons/moon.png" alt="Dark Theme" class="theme-icon" />
-							</div>
-						</label>
+						<span class="toggle-label">Theme:</span>
+						<div class="theme-icons">
+							<img src="icons/sun.png" alt="Light Theme" class="theme-icon" />
+							<label class="switch">
+								<input type="checkbox" id="themeSwitch" />
+								<span class="slider"></span>
+							</label>
+							<img src="icons/moon.png" alt="Dark Theme" class="theme-icon" />
+						</div>
+					</div>
+
+					<!-- Import Section -->
+					<div class="setting-item import-section">
+						<h3>Import Session</h3>
+						<input
+							type="file"
+							id="importFileInput"
+							accept="application/json"
+							style="display: none"
+						/>
+						<button id="importBtn" class="button">Import session</button>
 					</div>
 				</div>
 			</div>

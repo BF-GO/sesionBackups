@@ -43,6 +43,36 @@ function saveSession(type) {
 						);
 					} else {
 						console.log(`Session of type ${type} saved successfully`);
+
+						// Создание уведомления при успешном сохранении
+						if (type === 'auto') {
+							chrome.storage.local.get(['notificationsEnabled'], (result) => {
+								if (result.notificationsEnabled) {
+									chrome.notifications.create(
+										'',
+										{
+											type: 'basic',
+											iconUrl: 'icons/icon48.png',
+											title: 'Session Saved',
+											message: 'Automatic session backup completed.',
+										},
+										(notificationId) => {
+											if (chrome.runtime.lastError) {
+												console.error(
+													'Notification Error:',
+													chrome.runtime.lastError
+												);
+											} else {
+												console.log(
+													'Notification shown with ID:',
+													notificationId
+												);
+											}
+										}
+									);
+								}
+							});
+						}
 					}
 				});
 			});
@@ -83,31 +113,6 @@ chrome.alarms.onAlarm.addListener((alarm) => {
 	if (alarm.name === 'autoSaveAlarm') {
 		console.log('Auto-save alarm triggered');
 		saveSession('auto'); // Сохраняем сессию
-
-		// Проверяем, включены ли уведомления
-		chrome.storage.local.get(['notificationsEnabled'], (result) => {
-			if (result.notificationsEnabled) {
-				// Показать уведомление
-				chrome.notifications.create(
-					'',
-					{
-						type: 'basic',
-						iconUrl: 'icons/icon48.png',
-						title: 'Session Saved',
-						message: 'Automatic session backup completed.',
-					},
-					(notificationId) => {
-						if (chrome.runtime.lastError) {
-							console.error('Notification Error:', chrome.runtime.lastError);
-						} else {
-							console.log('Notification shown with ID:', notificationId);
-						}
-					}
-				);
-			} else {
-				console.log('Notifications are disabled.');
-			}
-		});
 	}
 });
 

@@ -1,5 +1,7 @@
 // popup.js
 
+const MAX_SESSIONS = 5; // Максимальное количество сессий
+
 document.addEventListener('DOMContentLoaded', () => {
 	const contentContainer = document.getElementById('contentContainer');
 	const mainContentTemplate = document.getElementById('mainContentTemplate');
@@ -62,6 +64,8 @@ document.addEventListener('DOMContentLoaded', () => {
 		const themeSwitch = document.getElementById('themeSwitch');
 		const notificationSwitch = document.getElementById('notificationSwitch');
 		const intervalInput = document.getElementById('intervalInput');
+		const importBtn = document.getElementById('importBtn');
+		const importFileInput = document.getElementById('importFileInput');
 
 		backBtn.addEventListener('click', loadMainContent);
 
@@ -108,6 +112,14 @@ document.addEventListener('DOMContentLoaded', () => {
 				});
 			}
 		});
+
+		// Обработчик для кнопки импорта
+		importBtn.addEventListener('click', () => {
+			importFileInput.click();
+		});
+
+		// Обработчик для выбора файла импорта
+		importFileInput.addEventListener('change', handleImportFile);
 	}
 
 	// Инициализация настроек из хранилища
@@ -155,6 +167,10 @@ document.addEventListener('DOMContentLoaded', () => {
 	// Функция для заполнения списка сессий
 	function populateSessionList(elementId, sessions) {
 		const sessionList = document.getElementById(elementId);
+		if (!sessionList) {
+			console.error(`Element with id "${elementId}" not found.`);
+			return;
+		}
 		sessionList.innerHTML = `<h2>${
 			elementId === 'autoSessions'
 				? 'Automatic Sessions'
@@ -172,12 +188,16 @@ document.addEventListener('DOMContentLoaded', () => {
 			const sessionItem = document.createElement('div');
 			sessionItem.className = 'session-item';
 			sessionItem.innerHTML = `
-							<div class="session-header">
-									<span>${formatTimestamp(session.timestamp)}</span>
-									<button class="button-small view-btn" data-index="${index}" data-type="${elementId}">View</button>
-							</div>
-							<div class="session-details" style="display: none;"></div>
-					`;
+        <div class="session-header">
+          <span>${formatTimestamp(session.timestamp)}</span>
+          <div>
+            <button class="button-small view-btn" data-index="${index}" data-type="${elementId}">View</button>
+            <button class="button-small export-btn" data-index="${index}" data-type="${elementId}">Export</button>
+            <button class="button-small delete-btn" data-index="${index}" data-type="${elementId}">Delete</button>
+          </div>
+        </div>
+        <div class="session-details" style="display: none;"></div>
+      `;
 			fragment.appendChild(sessionItem);
 		});
 
@@ -228,6 +248,14 @@ document.addEventListener('DOMContentLoaded', () => {
 				tabsContainer.style.display = 'block';
 				e.target.textContent = 'Hide Tabs';
 			}
+		} else if (e.target.classList.contains('delete-btn')) {
+			const sessionIndex = e.target.getAttribute('data-index');
+			const sessionType = e.target.getAttribute('data-type');
+			deleteSession(sessionIndex, sessionType);
+		} else if (e.target.classList.contains('export-btn')) {
+			const sessionIndex = e.target.getAttribute('data-index');
+			const sessionType = e.target.getAttribute('data-type');
+			exportSession(sessionIndex, sessionType);
 		}
 	}
 
@@ -243,7 +271,7 @@ document.addEventListener('DOMContentLoaded', () => {
 				return;
 			}
 
-			const detailsDiv = button.parentElement.nextElementSibling;
+			const detailsDiv = button.parentElement.parentElement.nextElementSibling;
 			if (detailsDiv.style.display === 'block') {
 				detailsDiv.style.display = 'none';
 				button.textContent = 'View';
@@ -256,24 +284,24 @@ document.addEventListener('DOMContentLoaded', () => {
 				const windowItem = document.createElement('div');
 				windowItem.className = 'window-item';
 				windowItem.innerHTML = `
-									<p>Window ${index + 1} (${window.tabs.length} tabs)</p>
-									<button class="button-small toggle-tabs-btn">Show Tabs</button>
-									<div class="tabs-container" style="display: none;">
-											<ul>
-													${window.tabs
-														.map(
-															(tab) =>
-																`<li><a href="${
-																	tab.url
-																}" target="_blank" title="${escapeHtml(
-																	tab.title
-																)}">${escapeHtml(tab.title)}</a></li>`
-														)
-														.join('')}
-											</ul>
-											<button class="button-small restore-btn" data-window-index="${index}" data-session-type="${sessionType}" data-session-index="${sessionIndex}">Restore this Window</button>
-									</div>
-							`;
+          <p>Window ${index + 1} (${window.tabs.length} tabs)</p>
+          <button class="button-small toggle-tabs-btn">Show Tabs</button>
+          <div class="tabs-container" style="display: none;">
+            <ul>
+              ${window.tabs
+								.map(
+									(tab) =>
+										`<li><a href="${
+											tab.url
+										}" target="_blank" title="${escapeHtml(
+											tab.title
+										)}">${escapeHtml(tab.title)}</a></li>`
+								)
+								.join('')}
+            </ul>
+            <button class="button-small restore-btn" data-window-index="${index}" data-session-type="${sessionType}" data-session-index="${sessionIndex}">Restore this Window</button>
+          </div>
+        `;
 				detailsDiv.appendChild(windowItem);
 			});
 
@@ -285,6 +313,54 @@ document.addEventListener('DOMContentLoaded', () => {
 
 			detailsDiv.style.display = 'block';
 			button.textContent = 'Hide';
+		});
+	}
+
+	// Функция для удаления сессии
+	function deleteSession(sessionIndex, sessionType) {
+		chrome.storage.local.get([sessionType], (result) => {
+			let sessions = result[sessionType] || [];
+			sessions.splice(sessionIndex, 1);
+			chrome.storage.local.set({ [sessionType]: sessions }, () => {
+				if (chrome.runtime.lastError) {
+					console.error('Error deleting session:', chrome.runtime.lastError);
+					showNotification('Error', 'Failed to delete session.');
+				} else {
+					loadSessions();
+					showNotification('Success', 'Session deleted successfully.');
+				}
+			});
+		});
+	}
+
+	// Функция для экспорта выбранной сессии
+	function exportSession(sessionIndex, sessionType) {
+		chrome.storage.local.get([sessionType], (result) => {
+			const sessions = result[sessionType] || [];
+			const session = sessions[sessionIndex];
+
+			if (!session) {
+				console.error('Session not found:', sessionIndex, sessionType);
+				showNotification('Error', 'Session not found.');
+				return;
+			}
+
+			const data = {
+				[sessionType]: [session],
+			};
+
+			const jsonStr = JSON.stringify(data, null, 2);
+			const blob = new Blob([jsonStr], { type: 'application/json' });
+			const url = URL.createObjectURL(blob);
+			const downloadLink = document.createElement('a');
+			downloadLink.href = url;
+			const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+			downloadLink.download = `session_${timestamp}.json`;
+			document.body.appendChild(downloadLink);
+			downloadLink.click();
+			document.body.removeChild(downloadLink);
+			URL.revokeObjectURL(url);
+			showNotification('Export', 'Session has been exported successfully.');
 		});
 	}
 
@@ -385,6 +461,101 @@ document.addEventListener('DOMContentLoaded', () => {
 		return text.replace(/[&<>"']/g, function (m) {
 			return map[m];
 		});
+	}
+
+	// Функция для обработки файла импорта
+	function handleImportFile(event) {
+		const file = event.target.files[0];
+		if (!file) {
+			showNotification('Import', 'No file selected.');
+			return;
+		}
+
+		const reader = new FileReader();
+		reader.onload = (e) => {
+			try {
+				const importedData = JSON.parse(e.target.result);
+
+				// Проверка структуры данных
+				if (
+					(!importedData.autoSessions ||
+						!Array.isArray(importedData.autoSessions)) &&
+					(!importedData.changeSessions ||
+						!Array.isArray(importedData.changeSessions))
+				) {
+					throw new Error('Invalid session data format.');
+				}
+
+				// Объединение существующих сессий с импортированными
+				chrome.storage.local.get(
+					['autoSessions', 'changeSessions'],
+					(result) => {
+						let existingAuto = result.autoSessions || [];
+						let existingChange = result.changeSessions || [];
+
+						// Импортируем autoSessions, если они есть
+						if (
+							importedData.autoSessions &&
+							Array.isArray(importedData.autoSessions)
+						) {
+							existingAuto = [...existingAuto, ...importedData.autoSessions];
+							// Ограничение до MAX_SESSIONS
+							if (existingAuto.length > MAX_SESSIONS) {
+								existingAuto = existingAuto.slice(
+									existingAuto.length - MAX_SESSIONS
+								);
+							}
+						}
+
+						// Импортируем changeSessions, если они есть
+						if (
+							importedData.changeSessions &&
+							Array.isArray(importedData.changeSessions)
+						) {
+							existingChange = [
+								...existingChange,
+								...importedData.changeSessions,
+							];
+							// Ограничение до MAX_SESSIONS
+							if (existingChange.length > MAX_SESSIONS) {
+								existingChange = existingChange.slice(
+									existingChange.length - MAX_SESSIONS
+								);
+							}
+						}
+
+						chrome.storage.local.set(
+							{
+								autoSessions: existingAuto,
+								changeSessions: existingChange,
+							},
+							() => {
+								if (chrome.runtime.lastError) {
+									console.error(
+										'Error importing sessions:',
+										chrome.runtime.lastError
+									);
+									showNotification(
+										'Import Error',
+										'Failed to import sessions.'
+									);
+								} else {
+									loadMainContent(); // Перезагружаем главное содержимое и сессии
+									showNotification(
+										'Import',
+										'Sessions have been imported successfully.'
+									);
+								}
+							}
+						);
+					}
+				);
+			} catch (error) {
+				console.error('Error parsing imported file:', error);
+				showNotification('Import Error', 'Invalid file format.');
+			}
+		};
+		reader.readAsText(file);
 	}
 
 	// Загружаем основное содержимое при запуске
