@@ -175,7 +175,7 @@ document.addEventListener('DOMContentLoaded', () => {
 				.querySelector('.session-header span')
 				.textContent.toLowerCase();
 			if (sessionName.includes(query)) {
-				item.style.display = 'block';
+				item.style.display = 'flex'; // Используем 'flex', чтобы сохранить расположение
 			} else {
 				item.style.display = 'none';
 			}

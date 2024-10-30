@@ -3,16 +3,38 @@
 	<head>
 		<meta charset="UTF-8" />
 		<title>Session Saver</title>
+		<!-- Подключение шрифта Roboto -->
+		<link
+			href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap"
+			rel="stylesheet"
+		/>
+		<!-- Подключение CSS -->
 		<link rel="stylesheet" href="styles.css" />
 	</head>
 	<body>
 		<!-- Контейнер для навигации по вкладкам -->
 		<div class="tab-container">
 			<div class="tabs">
-				<button class="tab-button active" data-tab="sessions">Сессии</button>
-				<button class="tab-button" data-tab="statistics">Статистика</button>
-				<button class="tab-button" data-tab="schedule">Планирование</button>
-				<button class="tab-button" data-tab="settings">Настройки</button>
+				<button class="tab-button active" data-tab="sessions">
+					<!-- Вставьте свою иконку здесь -->
+					<img src="icons/sessions.png" alt="Сессии" class="tab-icon" />
+					<span class="tab-label">Сессии</span>
+				</button>
+				<button class="tab-button" data-tab="statistics">
+					<!-- Вставьте свою иконку здесь -->
+					<img src="icons/statistics.png" alt="Статистика" class="tab-icon" />
+					<span class="tab-label">Статистика</span>
+				</button>
+				<button class="tab-button" data-tab="schedule">
+					<!-- Вставьте свою иконку здесь -->
+					<img src="icons/schedule.png" alt="Планирование" class="tab-icon" />
+					<span class="tab-label">Планирование</span>
+				</button>
+				<button class="tab-button" data-tab="settings">
+					<!-- Вставьте свою иконку здесь -->
+					<img src="icons/gear.png" alt="Настройки" class="tab-icon" />
+					<span class="tab-label">Настройки</span>
+				</button>
 			</div>
 		</div>
 
@@ -26,6 +48,12 @@
 					<div class="sessions-controls">
 						<input type="text" id="searchInput" placeholder="Поиск сессий..." />
 						<button id="createGroupBtn" class="button-small">
+							<!-- Вставьте свою иконку здесь -->
+							<img
+								src="icons/add.png"
+								alt="Создать Группу"
+								class="button-icon"
+							/>
 							Создать Группу
 						</button>
 					</div>
@@ -41,6 +69,8 @@
 					</div>
 					<div class="controls">
 						<button id="saveBtn" class="button">
+							<!-- Вставьте свою иконку здесь -->
+							<img src="icons/save.png" alt="Сохранить" class="button-icon" />
 							Сохранить Текущую Сессию
 						</button>
 					</div>
@@ -155,6 +185,7 @@
 			</template>
 		</div>
 
+		<!-- Подключение скрипта -->
 		<script src="popup.js"></script>
 	</body>
 </html>

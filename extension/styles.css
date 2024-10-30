@@ -1,3 +1,6 @@
+/* Подключение шрифта Roboto */
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap');
+
 /* CSS Reset */
 *,
 *::before,
@@ -10,124 +13,210 @@
 /* Переменные темы */
 :root {
 	/* Светлая тема */
-	--background-color: #f0f2f5;
-	--text-color: #333333;
-	--primary-color: #007bff;
-	--primary-hover: #0056b3;
-	--secondary-color: #17a2b8;
-	--secondary-hover: #117a8b;
-	--border-color: #dcdcdc;
+	--background-color: #f9f9f9;
+	--text-color: #2c3e50;
+	--primary-color: #3498db;
+	--primary-hover: #2980b9;
+	--secondary-color: #2ecc71;
+	--secondary-hover: #27ae60;
+	--border-color: #bdc3c7;
 	--card-background: #ffffff;
-	--toggle-bg: #cccccc;
+	--toggle-bg: #ecf0f1;
 	--toggle-thumb: #ffffff;
-	--session-item-hover-bg: #f9f9f9;
-	--notification-bg: #ffffff;
-	--notification-text: #333333;
+	--session-item-hover-bg: #ecf0f1;
+	--font-family: 'Roboto', sans-serif;
 }
 
 .dark-theme {
-	--background-color: #2c2c2c;
-	--text-color: #e0e0e0;
-	--primary-color: #1e90ff;
-	--primary-hover: #1c86ee;
-	--secondary-color: #20c997;
-	--secondary-hover: #17a589;
-	--border-color: #444444;
-	--card-background: #3a3a3a;
-	--toggle-bg: #555555;
-	--toggle-thumb: #ffffff;
-	--session-item-hover-bg: #4a4a4a;
-	--notification-bg: #3a3a3a;
-	--notification-text: #e0e0e0;
+	--background-color: #1e272e;
+	--text-color: #d2dae2;
+	--primary-color: #9b59b6;
+	--primary-hover: #8e44ad;
+	--secondary-color: #e74c3c;
+	--secondary-hover: #c0392b;
+	--border-color: #485460;
+	--card-background: #2f3640;
+	--toggle-bg: #485460;
+	--toggle-thumb: #d2dae2;
+	--session-item-hover-bg: #353b48;
 }
 
-/* Стили для body и html */
+/* Body and HTML */
 body,
 html {
-	width: 100%;
-	height: auto;
-	font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+	font-family: var(--font-family);
 	background-color: var(--background-color);
 	color: var(--text-color);
-	overflow: hidden;
-	border: none;
-	border-radius: 0;
+	/* Удалены width, height и overflow */
+	transition: background-color 0.3s, color 0.3s;
 }
 
-/* Вкладочный Контейнер */
+/* Навигация */
 .tab-container {
-	width: 100%;
 	background-color: var(--card-background);
-	border-bottom: 1px solid var(--border-color);
+	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+	position: sticky;
+	top: 0;
+	z-index: 10;
+	transition: background-color 0.3s;
 }
 
 .tabs {
 	display: flex;
 	justify-content: space-around;
+	align-items: center;
+	padding: 10px 0;
 }
 
 .tab-button {
-	flex: 1;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	flex-grow: 1;
 	padding: 10px 0;
-	background: none;
-	border: none;
-	outline: none;
 	cursor: pointer;
-	font-size: 16px;
-	color: var(--text-color);
-	transition: background-color 0.3s, color 0.3s;
+	transition: background-color 0.3s, border-radius 0.3s;
+	border: none;
+	background-color: transparent;
+	position: relative;
+	border-radius: 20px 20px 0 0; /* Скругляем верхние углы */
+	min-width: 80px; /* Минимальная ширина кнопки */
 }
 
 .tab-button:hover {
-	background-color: var(--toggle-bg);
+	background-color: var(--session-item-hover-bg);
 }
 
 .tab-button.active {
-	background-color: var(--primary-color);
-	color: #fff;
+	border-bottom: 3px solid var(--primary-color);
+	background-color: var(--session-item-hover-bg);
 }
 
-/* Контейнер для содержимого вкладок */
+.tab-button .tab-icon {
+	width: 24px;
+	height: 24px;
+	margin-bottom: 4px;
+}
+
+.tab-button span.tab-label {
+	font-size: 12px; /* Уменьшенный размер шрифта */
+	display: block;
+	color: var(--text-color);
+	text-align: center; /* Центрирование текста */
+	word-wrap: break-word; /* Перенос длинных слов */
+	max-width: 70px; /* Ограничение ширины текста */
+}
+
+.tab-button.active span.tab-label {
+	color: var(--primary-color);
+}
+
+/* Контейнер для динамического содержимого вкладок */
 #contentContainer {
-	padding: 20px;
 	overflow-y: auto;
-	max-height: 400px; /* Ограничение высоты для предотвращения перегрузки */
+	padding: 20px;
 	background-color: var(--background-color);
+	min-width: 410px; /* Минимальная ширина окна */
+	transition: background-color 0.3s;
 }
 
-/* Основное содержимое вкладки */
+/* Стили для вкладок */
 .tab-content {
-	display: none;
+	display: none; /* Скрываем все вкладки по умолчанию */
+	min-width: 300px; /* Минимальная ширина для вкладок */
+	min-height: 200px; /* Минимальная высота для вкладок */
+	transition: display 0.3s;
 }
 
 .tab-content.active {
-	display: block;
+	display: block; /* Показываем активную вкладку */
 }
 
 /* Заголовки */
+h1,
+h2,
+h3 {
+	color: var(--text-color);
+}
+
 h1 {
 	font-size: 24px;
 	margin-bottom: 20px;
 	text-align: center;
-	color: var(--text-color);
 }
 
 h2 {
 	font-size: 18px;
-	margin-bottom: 8px;
-	color: var(--text-color);
+	margin-bottom: 15px;
 }
 
 h3 {
 	font-size: 16px;
-	margin-bottom: 8px;
+	margin-bottom: 10px;
+}
+
+/* Кнопки */
+.button,
+.button-small {
+	display: inline-flex;
+	align-items: center;
+	background-color: var(--primary-color);
+	color: white;
+	padding: 10px 20px;
+	font-size: 14px;
+	border: none;
+	border-radius: 30px;
+	cursor: pointer;
+	transition: background-color 0.3s, box-shadow 0.3s;
+	text-decoration: none;
+}
+
+.button:hover,
+.button-small:hover {
+	background-color: var(--primary-hover);
+	box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.button .button-icon,
+.button-small .button-icon {
+	width: 20px;
+	height: 20px;
+	margin-right: 8px;
+}
+
+.button-small {
+	padding: 8px 16px;
+}
+
+.button-small .button-icon {
+	width: 18px;
+	height: 18px;
+}
+
+/* Поля ввода */
+.sessions-controls {
+	display: flex;
+	align-items: center;
+	margin-bottom: 20px;
+}
+
+.sessions-controls input[type='text'] {
+	flex-grow: 1;
+	padding: 10px;
+	border: 1px solid var(--border-color);
+	border-radius: 30px;
+	margin-right: 10px;
+	background-color: var(--card-background);
 	color: var(--text-color);
 }
 
-/* Контейнеры сессий */
-.sessions-container,
-.statistics-container,
-.schedule-container {
+.sessions-controls input[type='text']::placeholder {
+	color: var(--text-color);
+	opacity: 0.6;
+}
+
+/* Списки сессий */
+.sessions-container {
 	display: flex;
 	flex-direction: column;
 	gap: 20px;
@@ -136,10 +225,11 @@ h3 {
 .session-list {
 	background-color: var(--card-background);
 	padding: 15px;
-	border-radius: 8px;
+	border-radius: 12px;
+	border: 1px solid var(--border-color);
 	max-height: 200px;
 	overflow-y: auto;
-	border: 1px solid var(--border-color);
+	transition: background-color 0.3s, border-color 0.3s;
 }
 
 .session-list h2 {
@@ -155,168 +245,79 @@ h3 {
 }
 
 .session-item {
-	margin-bottom: 15px;
-	padding: 15px;
-	background-color: var(--card-background);
-	border-left: 4px solid var(--primary-color);
-	border-radius: 8px;
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	padding: 10px;
+	border-bottom: 1px solid var(--border-color);
 	transition: background-color 0.3s, transform 0.3s;
+}
+
+.session-item:last-child {
+	border-bottom: none;
 }
 
 .session-item:hover {
 	background-color: var(--session-item-hover-bg);
 	transform: scale(1.01);
-}
-
-.session-header {
-	display: flex;
-	justify-content: space-between;
-	align-items: center;
-}
-
-.session-header span {
-	font-weight: bold;
-	color: var(--text-color);
-}
-
-/* Контейнеры управления */
-.controls {
-	display: flex;
-	justify-content: center;
-	margin-top: 20px;
-}
-
-.button {
-	background-color: var(--primary-color);
-	color: white;
-	padding: 12px 24px;
-	font-size: 14px;
-	border: none;
-	border-radius: 6px;
-	cursor: pointer;
-	transition: background-color 0.3s, transform 0.2s;
-}
-
-.button:hover {
-	background-color: var(--primary-hover);
-	transform: translateY(-2px);
-}
-
-.button-small {
-	background-color: var(--secondary-color);
-	color: white;
-	padding: 8px 16px;
-	font-size: 14px;
-	border: none;
-	border-radius: 6px;
-	cursor: pointer;
-	transition: background-color 0.3s;
-}
-
-.button-small:hover {
-	background-color: var(--secondary-hover);
-}
-
-/* Панель управления сессиями */
-.sessions-controls {
-	display: flex;
-	justify-content: space-between;
-	align-items: center;
-	margin-bottom: 15px;
-}
-
-#searchInput {
-	flex: 1;
-	padding: 8px 12px;
-	border: 1px solid var(--border-color);
-	border-radius: 4px;
-	background-color: var(--card-background);
-	color: var(--text-color);
-	margin-right: 10px;
-	font-size: 14px;
-}
-
-#searchInput:focus {
-	outline: none;
-	border-color: var(--primary-color);
-}
-
-#createGroupBtn {
-	background-color: var(--secondary-color);
-	color: white;
-	padding: 8px 16px;
-	font-size: 14px;
-	border: none;
-	border-radius: 6px;
-	cursor: pointer;
-	transition: background-color 0.3s;
-}
-
-#createGroupBtn:hover {
-	background-color: var(--secondary-hover);
-}
-
-/* Стилизация статистики */
-.statistics-container {
-	display: flex;
-	flex-direction: column;
-	gap: 15px;
-}
-
-.statistics-item {
-	padding: 15px;
-	background-color: var(--card-background);
-	border: 1px solid var(--border-color);
 	border-radius: 8px;
 }
 
-.statistics-item h3 {
-	margin-bottom: 8px;
-	font-size: 16px;
+.session-item .session-name {
+	font-weight: 500;
 	color: var(--text-color);
 }
 
-.statistics-item p {
-	font-size: 18px;
-	font-weight: bold;
+.session-item .session-actions {
+	display: flex;
+	gap: 10px;
+}
+
+.session-item .session-actions button {
+	background: none;
+	border: none;
+	cursor: pointer;
 	color: var(--primary-color);
+	font-size: 14px; /* Уменьшен размер шрифта для кнопок */
+	transition: color 0.3s;
 }
 
-/* Стилизация планирования */
-.schedule-container {
-	padding: 15px;
-	background-color: var(--card-background);
-	border: 1px solid var(--border-color);
-	border-radius: 8px;
-	/* Дополнительные стили по мере необходимости */
+.session-item .session-actions button:hover {
+	color: var(--primary-hover);
 }
 
-/* Стилизация настроек */
+.session-item .session-actions img {
+	width: 20px;
+	height: 20px;
+}
+
+/* Настройки */
 .settings-content {
 	display: flex;
 	flex-direction: column;
+	gap: 20px;
 }
 
-.header {
+.settings-content .header {
 	display: flex;
 	align-items: center;
 	margin-bottom: 20px;
 }
 
-.back-button {
+.settings-content .header .back-button {
 	width: 24px;
 	height: 24px;
 	cursor: pointer;
+	margin-right: 10px;
 }
 
-.back-button img {
+.settings-content .header .back-button img {
 	width: 100%;
 	height: 100%;
 }
 
-.header h2 {
-	flex-grow: 1;
-	text-align: center;
+.settings-content .header h2 {
+	font-size: 24px;
 	margin: 0;
 	color: var(--text-color);
 }
@@ -331,11 +332,24 @@ h3 {
 	display: flex;
 	align-items: center;
 	gap: 15px;
+	background-color: var(--card-background);
+	padding: 15px;
+	border-radius: 12px;
+	transition: background-color 0.3s;
+}
+
+.setting-item:hover {
+	background-color: var(--session-item-hover-bg);
 }
 
 .setting-icon {
 	width: 24px;
 	height: 24px;
+}
+
+.setting-icon img {
+	width: 100%;
+	height: 100%;
 }
 
 .toggle-label {
@@ -358,11 +372,12 @@ h3 {
 	border-color: var(--primary-color);
 }
 
+/* Переключатель */
 .switch {
 	position: relative;
 	display: inline-block;
-	width: 40px;
-	height: 20px;
+	width: 50px;
+	height: 28px;
 	flex-shrink: 0;
 }
 
@@ -375,25 +390,25 @@ h3 {
 .slider {
 	position: absolute;
 	cursor: pointer;
+	background-color: var(--toggle-bg);
+	border-radius: 34px;
 	top: 0;
 	left: 0;
 	right: 0;
 	bottom: 0;
-	background-color: var(--toggle-bg);
 	transition: background-color 0.4s, box-shadow 0.4s;
-	border-radius: 20px;
 }
 
 .slider::before {
-	position: absolute;
 	content: '';
-	height: 16px;
-	width: 16px;
+	position: absolute;
+	height: 24px;
+	width: 24px;
 	left: 2px;
 	top: 2px;
 	background-color: var(--toggle-thumb);
-	transition: transform 0.4s, box-shadow 0.2s;
 	border-radius: 50%;
+	transition: transform 0.4s, box-shadow 0.2s;
 }
 
 .switch input:checked + .slider {
@@ -401,7 +416,7 @@ h3 {
 }
 
 .switch input:checked + .slider::before {
-	transform: translateX(20px);
+	transform: translateX(22px);
 	box-shadow: 0 0 5px rgba(0, 0, 0, 0.2);
 }
 
@@ -410,46 +425,59 @@ h3 {
 	box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
 }
 
-.theme-icons {
+/* Переключатель Темы */
+.theme-toggle-container {
 	display: flex;
 	align-items: center;
 	gap: 10px;
 }
 
-.theme-icon {
+.theme-toggle-container .theme-icons img {
 	width: 24px;
 	height: 24px;
 }
 
-/* Стилизация Экспорта и Импорта */
+.theme-toggle-container .switch {
+	margin: 0 10px;
+}
+
+/* Стили для импорта и экспорта */
 .import-export-container {
 	display: flex;
 	flex-direction: column;
-	gap: 10px;
+	align-items: flex-start;
 }
 
 .import-export-container h3 {
+	font-size: 18px;
 	margin-bottom: 10px;
 	color: var(--text-color);
 }
 
-.import-export-container button {
-	width: fit-content;
+.import-export-container .button-small {
+	margin-bottom: 10px;
 }
 
-/* Стилизация окна деталей сессии */
-.window-item {
+.import-export-container input[type='file'] {
+	display: none;
+}
+
+/* Дополнительные стили */
+.toggle-tabs-btn {
 	margin-top: 10px;
-	padding: 10px;
-	background-color: var(--card-background);
+	background-color: var(--secondary-color);
+	color: white;
+	padding: 6px 12px;
+	font-size: 14px;
+	border: none;
 	border-radius: 6px;
-	border: 1px solid var(--border-color);
+	cursor: pointer;
+	transition: background-color 0.3s, transform 0.2s;
 }
 
-.window-item p {
-	margin: 0 0 8px 0;
-	font-weight: bold;
-	color: var(--text-color);
+.toggle-tabs-btn:hover {
+	background-color: var(--secondary-hover);
+	transform: translateY(-2px);
 }
 
 .tabs-container {
@@ -470,20 +498,8 @@ h3 {
 	max-height: 1000px;
 }
 
-.tabs-container ul {
-	list-style-type: none;
-	padding-left: 0;
-}
-
-.tabs-container ul li {
-	margin-bottom: 5px;
-	padding: 5px 0;
-}
-
 .tabs-container ul li a {
 	display: block;
-	padding: 8px 12px;
-	border-radius: 4px;
 	max-width: 250px;
 	white-space: nowrap;
 	overflow: hidden;
@@ -499,31 +515,32 @@ h3 {
 	background-color: var(--session-item-hover-bg);
 }
 
-/* Всплывающие уведомления */
-.notification {
-	position: fixed;
-	top: 20px;
-	right: 20px;
-	background-color: var(--notification-bg);
-	color: var(--notification-text);
-	padding: 15px 20px;
-	border-radius: 6px;
-	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-	z-index: 1000;
-	opacity: 0;
-	transition: opacity 0.5s ease-in-out;
+.tabs-container ul li {
+	margin-bottom: 5px;
+	padding: 5px 0;
 }
 
-.notification.show {
-	opacity: 1;
+.tabs-container ul {
+	list-style-type: none;
+	padding-left: 0;
+}
+
+.tabs-container ul li a {
+	display: block;
+	padding: 8px 12px;
+	border-radius: 4px;
+}
+
+.tabs-container ul li a:hover {
+	background-color: var(--session-item-hover-bg);
 }
 
 /* Стилизация скроллбаров для браузеров на основе WebKit */
 #contentContainer::-webkit-scrollbar,
 .tabs-container::-webkit-scrollbar,
 .session-list::-webkit-scrollbar {
-	width: 6px;
-	height: 6px;
+	width: 8px;
+	height: 8px;
 }
 
 #contentContainer::-webkit-scrollbar-track,
@@ -536,7 +553,7 @@ h3 {
 .tabs-container::-webkit-scrollbar-thumb,
 .session-list::-webkit-scrollbar-thumb {
 	background-color: rgba(0, 0, 0, 0.2);
-	border-radius: 3px;
+	border-radius: 4px;
 	border: 1px solid transparent;
 }
 
@@ -560,46 +577,72 @@ h3 {
 	scrollbar-color: rgba(0, 0, 0, 0.4) transparent;
 }
 
-/* Адаптивность */
-@media (max-width: 500px) {
-	#contentContainer {
-		padding: 10px;
+/* Общие стили для текстовых элементов */
+p {
+	font-size: 16px;
+	color: var(--text-color);
+}
+
+a {
+	color: var(--primary-color);
+	text-decoration: none;
+}
+
+a:hover {
+	text-decoration: underline;
+}
+
+/* Дополнительные стили для мобильных устройств */
+@media (max-width: 800px) {
+	.sessions-controls {
+		flex-direction: column;
 	}
 
-	.button,
-	.button-small {
-		font-size: 14px;
+	.sessions-controls input[type='text'] {
+		margin-right: 0;
+		margin-bottom: 10px;
+		width: 100%;
 	}
 
-	h1 {
-		font-size: 22px;
+	.tab-button span.tab-label {
+		display: none;
 	}
 
-	h2 {
-		font-size: 18px;
+	.tab-button .tab-icon {
+		margin-bottom: 0;
+	}
+}
+
+@media (max-width: 600px) {
+	.statistics-item {
+		flex: 1 1 100%;
 	}
 
-	h3 {
-		font-size: 14px;
+	.setting-item {
+		flex-direction: column;
+		align-items: flex-start;
 	}
 
-	#searchInput {
-		font-size: 14px;
+	.setting-item .switch {
+		margin-top: 10px;
 	}
+}
 
-	.toggle-label {
-		font-size: 14px;
-	}
+/* Анимации и переходы */
+.button,
+.button-small {
+	transition: background-color 0.3s, box-shadow 0.3s;
+}
 
-	li a {
-		font-size: 12px;
-	}
+.button:hover,
+.button-small:hover {
+	box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
 
-	.theme-icons {
-		gap: 5px;
-	}
+.session-item {
+	transition: background-color 0.3s, transform 0.2s;
+}
 
-	.statistics-item p {
-		font-size: 16px;
-	}
+.session-item:hover {
+	transform: translateY(-2px);
 }
