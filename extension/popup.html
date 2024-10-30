@@ -80,7 +80,12 @@
 			<template id="statisticsTabTemplate">
 				<!-- Содержимое вкладки "Статистика" -->
 				<div class="tab-content" id="statistics">
-					<h1>Статистика</h1>
+					<div class="header">
+						<div class="back-button" id="backBtnStatistics">
+							<img src="icons/back.png" alt="Назад" />
+						</div>
+						<h2>Статистика</h2>
+					</div>
 					<div class="statistics-container">
 						<div class="statistics-item">
 							<h3>Всего Сессий</h3>
@@ -94,7 +99,6 @@
 							<h3>Самый Частый Сайт</h3>
 							<p id="mostFrequentSite">N/A</p>
 						</div>
-						<!-- Добавьте дополнительные статистические показатели по мере необходимости -->
 					</div>
 				</div>
 			</template>
@@ -102,7 +106,12 @@
 			<template id="scheduleTabTemplate">
 				<!-- Содержимое вкладки "Планирование" -->
 				<div class="tab-content" id="schedule">
-					<h1>Планирование</h1>
+					<div class="header">
+						<div class="back-button" id="backBtnSchedule">
+							<img src="icons/back.png" alt="Назад" />
+						</div>
+						<h2>Планирование</h2>
+					</div>
 					<div class="schedule-container">
 						<p>Планирование пока не доступно.</p>
 						<!-- Здесь будет интерфейс для планирования действий -->

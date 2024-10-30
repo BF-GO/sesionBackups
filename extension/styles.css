@@ -25,6 +25,8 @@
 	--toggle-thumb: #ffffff;
 	--session-item-hover-bg: #ecf0f1;
 	--font-family: 'Roboto', sans-serif;
+	--modal-background: rgba(0, 0, 0, 0.5);
+	--modal-content-background: #ffffff;
 }
 
 .dark-theme {
@@ -39,15 +41,21 @@
 	--toggle-bg: #485460;
 	--toggle-thumb: #d2dae2;
 	--session-item-hover-bg: #353b48;
+	--modal-content-background: #2f3640;
 }
 
 /* Body and HTML */
+/* Изменено: Добавлены flex-стили и скрытие скролла */
 body,
 html {
 	font-family: var(--font-family);
 	background-color: var(--background-color);
 	color: var(--text-color);
-	/* Удалены width, height и overflow */
+	height: 100%; /* Изменено */
+	margin: 0; /* Изменено */
+	display: flex; /* Изменено */
+	flex-direction: column; /* Изменено */
+	overflow: hidden; /* Изменено */
 	transition: background-color 0.3s, color 0.3s;
 }
 
@@ -59,6 +67,8 @@ html {
 	top: 0;
 	z-index: 10;
 	transition: background-color 0.3s;
+	border-radius: 12px 12px 0 0; /* Изменено: Добавлено скругление верхних углов */
+	overflow: hidden; /* Изменено: Предотвращение выхода содержимого за границы */
 }
 
 .tabs {
@@ -75,12 +85,14 @@ html {
 	flex-grow: 1;
 	padding: 10px 0;
 	cursor: pointer;
-	transition: background-color 0.3s, border-radius 0.3s;
+	transition: background-color 0.3s, border-bottom 0.3s;
 	border: none;
 	background-color: transparent;
 	position: relative;
-	border-radius: 20px 20px 0 0; /* Скругляем верхние углы */
-	min-width: 80px; /* Минимальная ширина кнопки */
+	border-bottom: 3px solid transparent;
+	min-width: 80px;
+	/* Изменено: Добавлено скругление */
+	border-radius: 12px 12px 0 0;
 }
 
 .tab-button:hover {
@@ -99,12 +111,12 @@ html {
 }
 
 .tab-button span.tab-label {
-	font-size: 12px; /* Уменьшенный размер шрифта */
+	font-size: 12px;
 	display: block;
 	color: var(--text-color);
-	text-align: center; /* Центрирование текста */
-	word-wrap: break-word; /* Перенос длинных слов */
-	max-width: 70px; /* Ограничение ширины текста */
+	text-align: center;
+	word-wrap: break-word;
+	max-width: 70px;
 }
 
 .tab-button.active span.tab-label {
@@ -112,24 +124,33 @@ html {
 }
 
 /* Контейнер для динамического содержимого вкладок */
+/* Изменено: Добавлено flex-grow и overflow для прокрутки внутри контейнера */
 #contentContainer {
-	overflow-y: auto;
+	flex-grow: 1; /* Изменено */
+	overflow-y: auto; /* Изменено: Прокрутка внутри контейнера */
 	padding: 20px;
 	background-color: var(--background-color);
-	min-width: 410px; /* Минимальная ширина окна */
+	min-width: 410px;
 	transition: background-color 0.3s;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
 }
 
 /* Стили для вкладок */
 .tab-content {
-	display: none; /* Скрываем все вкладки по умолчанию */
-	min-width: 300px; /* Минимальная ширина для вкладок */
-	min-height: 200px; /* Минимальная высота для вкладок */
-	transition: display 0.3s;
+	display: none;
+	width: 100%;
+	max-width: 800px; /* Увеличено для лучшего отображения деталей */
+	min-height: 300px;
+	transition: opacity 0.3s ease-in-out;
+	opacity: 0;
+	position: relative;
 }
 
 .tab-content.active {
-	display: block; /* Показываем активную вкладку */
+	display: block;
+	opacity: 1;
 }
 
 /* Заголовки */
@@ -198,6 +219,7 @@ h3 {
 	display: flex;
 	align-items: center;
 	margin-bottom: 20px;
+	width: 100%;
 }
 
 .sessions-controls input[type='text'] {
@@ -220,6 +242,7 @@ h3 {
 	display: flex;
 	flex-direction: column;
 	gap: 20px;
+	width: 100%;
 }
 
 .session-list {
@@ -227,7 +250,7 @@ h3 {
 	padding: 15px;
 	border-radius: 12px;
 	border: 1px solid var(--border-color);
-	max-height: 200px;
+	max-height: 400px; /* Увеличено для отображения большего количества сессий */
 	overflow-y: auto;
 	transition: background-color 0.3s, border-color 0.3s;
 }
@@ -246,11 +269,13 @@ h3 {
 
 .session-item {
 	display: flex;
-	justify-content: space-between;
-	align-items: center;
-	padding: 10px;
+	flex-direction: column;
+	padding: 15px;
 	border-bottom: 1px solid var(--border-color);
 	transition: background-color 0.3s, transform 0.3s;
+	border-radius: 8px;
+	margin-bottom: 10px;
+	background-color: var(--card-background);
 }
 
 .session-item:last-child {
@@ -260,35 +285,156 @@ h3 {
 .session-item:hover {
 	background-color: var(--session-item-hover-bg);
 	transform: scale(1.01);
-	border-radius: 8px;
 }
 
-.session-item .session-name {
+.session-header {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	margin-bottom: 10px;
+}
+
+.session-header span {
 	font-weight: 500;
 	color: var(--text-color);
+	font-size: 16px;
 }
 
-.session-item .session-actions {
+.session-actions {
 	display: flex;
 	gap: 10px;
 }
 
-.session-item .session-actions button {
+.session-actions button {
 	background: none;
 	border: none;
 	cursor: pointer;
 	color: var(--primary-color);
-	font-size: 14px; /* Уменьшен размер шрифта для кнопок */
+	font-size: 14px;
 	transition: color 0.3s;
+	display: flex;
+	align-items: center;
+	gap: 5px;
 }
 
-.session-item .session-actions button:hover {
+.session-actions button:hover {
 	color: var(--primary-hover);
 }
 
-.session-item .session-actions img {
+.session-actions img {
 	width: 20px;
 	height: 20px;
+}
+
+/* Стили для session-details */
+.session-details {
+	padding: 10px 20px;
+	border-top: 1px solid var(--border-color);
+	margin-top: 10px;
+	background-color: var(--card-background);
+	border-radius: 8px;
+}
+
+.window-item {
+	margin-bottom: 15px;
+}
+
+.window-item p {
+	font-weight: 500;
+	margin-bottom: 10px;
+}
+
+.tabs-container {
+	display: none;
+	padding-left: 20px;
+	margin-bottom: 10px;
+}
+
+.tabs-container.active {
+	display: block;
+}
+
+.tabs-container ul {
+	list-style: none;
+	padding-left: 0;
+	margin: 0;
+}
+
+.tabs-container ul li {
+	display: flex;
+	align-items: center;
+	padding: 5px 0;
+	border-bottom: 1px solid var(--border-color);
+}
+
+.tabs-container ul li:last-child {
+	border-bottom: none;
+}
+
+.tabs-container ul li a {
+	display: flex;
+	align-items: center;
+	text-decoration: none;
+	color: var(--primary-color);
+	transition: color 0.3s;
+	width: 100%;
+}
+
+.tabs-container ul li a:hover {
+	color: var(--primary-hover);
+}
+
+.tab-favicon {
+	width: 16px;
+	height: 16px;
+	margin-right: 8px;
+	border-radius: 4px;
+	object-fit: cover;
+}
+
+.tab-title {
+	font-size: 14px;
+	margin-right: 5px;
+	flex-grow: 1;
+}
+
+.tab-url {
+	font-size: 12px;
+	color: var(--text-color);
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+/* Настройки и другие вкладки */
+.tab-content .header {
+	display: flex;
+	align-items: center;
+	margin-bottom: 20px;
+	width: 100%;
+	position: relative;
+}
+
+.tab-content .header .back-button {
+	width: 24px;
+	height: 24px;
+	cursor: pointer;
+	margin-right: 10px;
+	position: absolute;
+	left: 0;
+}
+
+.tab-content .header .back-button img {
+	width: 100%;
+	height: 100%;
+}
+
+.tab-content .header h2 {
+	font-size: 24px;
+	margin: 0;
+	color: var(--text-color);
+	flex-grow: 1;
+	text-align: center;
 }
 
 /* Настройки */
@@ -296,30 +442,7 @@ h3 {
 	display: flex;
 	flex-direction: column;
 	gap: 20px;
-}
-
-.settings-content .header {
-	display: flex;
-	align-items: center;
-	margin-bottom: 20px;
-}
-
-.settings-content .header .back-button {
-	width: 24px;
-	height: 24px;
-	cursor: pointer;
-	margin-right: 10px;
-}
-
-.settings-content .header .back-button img {
 	width: 100%;
-	height: 100%;
-}
-
-.settings-content .header h2 {
-	font-size: 24px;
-	margin: 0;
-	color: var(--text-color);
 }
 
 .settings-items {
@@ -441,100 +564,6 @@ h3 {
 	margin: 0 10px;
 }
 
-/* Стили для импорта и экспорта */
-.import-export-container {
-	display: flex;
-	flex-direction: column;
-	align-items: flex-start;
-}
-
-.import-export-container h3 {
-	font-size: 18px;
-	margin-bottom: 10px;
-	color: var(--text-color);
-}
-
-.import-export-container .button-small {
-	margin-bottom: 10px;
-}
-
-.import-export-container input[type='file'] {
-	display: none;
-}
-
-/* Дополнительные стили */
-.toggle-tabs-btn {
-	margin-top: 10px;
-	background-color: var(--secondary-color);
-	color: white;
-	padding: 6px 12px;
-	font-size: 14px;
-	border: none;
-	border-radius: 6px;
-	cursor: pointer;
-	transition: background-color 0.3s, transform 0.2s;
-}
-
-.toggle-tabs-btn:hover {
-	background-color: var(--secondary-hover);
-	transform: translateY(-2px);
-}
-
-.tabs-container {
-	margin-top: 10px;
-	padding: 10px;
-	background-color: var(--card-background);
-	border: 1px solid var(--border-color);
-	border-radius: 6px;
-	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-	transition: max-height 0.3s ease-out, opacity 0.3s ease-out;
-	overflow: hidden;
-	opacity: 0;
-	max-height: 0;
-}
-
-.tabs-container[style*='display: block'] {
-	opacity: 1;
-	max-height: 1000px;
-}
-
-.tabs-container ul li a {
-	display: block;
-	max-width: 250px;
-	white-space: nowrap;
-	overflow: hidden;
-	text-overflow: ellipsis;
-	text-decoration: none;
-	color: var(--primary-color);
-	transition: color 0.3s, background-color 0.3s;
-}
-
-.tabs-container ul li a:hover {
-	color: var(--primary-hover);
-	text-decoration: underline;
-	background-color: var(--session-item-hover-bg);
-}
-
-.tabs-container ul li {
-	margin-bottom: 5px;
-	padding: 5px 0;
-}
-
-.tabs-container ul {
-	list-style-type: none;
-	padding-left: 0;
-}
-
-.tabs-container ul li a {
-	display: block;
-	padding: 8px 12px;
-	border-radius: 4px;
-}
-
-.tabs-container ul li a:hover {
-	background-color: var(--session-item-hover-bg);
-}
-
 /* Стилизация скроллбаров для браузеров на основе WebKit */
 #contentContainer::-webkit-scrollbar,
 .tabs-container::-webkit-scrollbar,
@@ -596,6 +625,7 @@ a:hover {
 @media (max-width: 800px) {
 	.sessions-controls {
 		flex-direction: column;
+		align-items: stretch;
 	}
 
 	.sessions-controls input[type='text'] {
@@ -610,6 +640,18 @@ a:hover {
 
 	.tab-button .tab-icon {
 		margin-bottom: 0;
+	}
+
+	.tab-content {
+		max-width: 100%;
+	}
+
+	.session-item {
+		padding: 10px;
+	}
+
+	.session-header span {
+		font-size: 14px;
 	}
 }
 
@@ -626,6 +668,18 @@ a:hover {
 	.setting-item .switch {
 		margin-top: 10px;
 	}
+
+	.tabs-container ul li a {
+		font-size: 13px;
+	}
+
+	.tab-title {
+		font-size: 13px;
+	}
+
+	.tab-url {
+		font-size: 11px;
+	}
 }
 
 /* Анимации и переходы */
@@ -640,9 +694,177 @@ a:hover {
 }
 
 .session-item {
-	transition: background-color 0.3s, transform 0.2s;
+	transition: background-color 0.3s, transform 0.3s;
 }
 
 .session-item:hover {
-	transform: translateY(-2px);
+	transform: scale(1.01);
+}
+
+/* Кнопка Назад */
+.back-button {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.back-button img {
+	width: 24px;
+	height: 24px;
+}
+
+/* Обеспечение согласованности заголовков во всех вкладках */
+.tab-content .header {
+	display: flex;
+	align-items: center;
+	width: 100%;
+}
+
+.tab-content .header h1,
+.tab-content .header h2 {
+	flex-grow: 1;
+	text-align: center;
+}
+
+.tab-content .header .back-button {
+	position: absolute;
+	left: 0;
+}
+
+/* Обеспечение корректного расположения контента */
+.tab-content .content {
+	width: 100%;
+}
+
+/* Дополнительные стили для меню «Просмотреть» и «Показать вкладки» */
+.view-tabs-menu {
+	width: 100%;
+}
+
+.view-tabs-menu ul {
+	list-style: none;
+	padding: 0;
+	margin: 0;
+}
+
+.view-tabs-menu ul li {
+	display: flex;
+	align-items: center;
+	padding: 8px 12px;
+	border-bottom: 1px solid var(--border-color);
+}
+
+.view-tabs-menu ul li:last-child {
+	border-bottom: none;
+}
+
+.view-tabs-menu ul li:hover {
+	background-color: var(--session-item-hover-bg);
+}
+
+.view-tabs-menu ul li img {
+	width: 16px;
+	height: 16px;
+	margin-right: 10px;
+}
+
+.view-tabs-menu ul li span {
+	flex-grow: 1;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.view-tabs-menu ul li .tab-close-btn {
+	margin-left: 8px;
+	width: 16px;
+	height: 16px;
+	cursor: pointer;
+}
+
+.view-tabs-menu ul li .tab-close-btn img {
+	width: 100%;
+	height: 100%;
+}
+
+/* Обновленные стили для отображения деталей сессий и вкладок */
+.session-details {
+	padding: 20px;
+	background-color: var(--card-background);
+	border-radius: 12px; /* Изменено: Скругление углов */
+	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.window-item {
+	margin-bottom: 20px;
+}
+
+.window-item p {
+	font-size: 16px;
+	font-weight: 500;
+	margin-bottom: 10px;
+}
+
+.tabs-container {
+	display: none;
+	padding-left: 20px;
+}
+
+.tabs-container.active {
+	display: block;
+}
+
+.tabs-container ul {
+	list-style: none;
+	padding: 0;
+	margin: 0;
+}
+
+.tabs-container ul li {
+	padding: 5px 0;
+}
+
+.tabs-container ul li a {
+	display: flex;
+	align-items: center;
+}
+
+.tabs-container ul li a .tab-favicon {
+	margin-right: 10px;
+}
+
+.tabs-container ul li a .tab-title {
+	flex-grow: 1;
+}
+
+.tabs-container ul li a .tab-url {
+	flex-grow: 2;
+	margin-left: 10px;
+	color: var(--text-color);
+}
+
+/* Кнопки внутри session-details */
+.session-details .button-small {
+	margin-top: 10px;
+}
+
+.restore-btn {
+	background-color: var(--secondary-color);
+	color: white;
+	padding: 6px 12px;
+	border-radius: 6px;
+	cursor: pointer;
+	transition: background-color 0.3s;
+}
+
+.restore-btn:hover {
+	background-color: var(--secondary-hover);
+}
+
+/* Обеспечение корректного отображения кнопок восстановления */
+.restore-btn-container {
+	display: flex;
+	justify-content: flex-end;
+	gap: 10px;
+	margin-top: 10px;
 }
