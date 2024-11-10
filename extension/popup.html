@@ -3,198 +3,210 @@
 	<head>
 		<meta charset="UTF-8" />
 		<title>Session Saver</title>
-		<!-- Подключение шрифта Roboto -->
 		<link
 			href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap"
 			rel="stylesheet"
 		/>
-		<!-- Подключение CSS -->
 		<link rel="stylesheet" href="styles.css" />
 	</head>
 	<body>
-		<!-- Контейнер для навигации по вкладкам -->
-		<div class="tab-container">
-			<div class="tabs">
-				<button class="tab-button active" data-tab="sessions">
-					<!-- Вставьте свою иконку здесь -->
-					<img src="icons/sessions.png" alt="Сессии" class="tab-icon" />
-					<span class="tab-label">Сессии</span>
-				</button>
-				<button class="tab-button" data-tab="statistics">
-					<!-- Вставьте свою иконку здесь -->
-					<img src="icons/statistics.png" alt="Статистика" class="tab-icon" />
-					<span class="tab-label">Статистика</span>
-				</button>
-				<button class="tab-button" data-tab="schedule">
-					<!-- Вставьте свою иконку здесь -->
-					<img src="icons/schedule.png" alt="Планирование" class="tab-icon" />
-					<span class="tab-label">Планирование</span>
-				</button>
-				<button class="tab-button" data-tab="settings">
-					<!-- Вставьте свою иконку здесь -->
-					<img src="icons/gear.png" alt="Настройки" class="tab-icon" />
-					<span class="tab-label">Настройки</span>
-				</button>
+		<main>
+			<div class="tab-container">
+				<div class="tabs">
+					<button class="tab-button active" data-tab="sessions">
+						<img src="icons/sessions.png" alt="Сессии" class="tab-icon" />
+						<span class="tab-label">Сессии</span>
+					</button>
+					<button class="tab-button" data-tab="statistics">
+						<img src="icons/statistics.png" alt="Статистика" class="tab-icon" />
+						<span class="tab-label">Статистика</span>
+					</button>
+					<button class="tab-button" data-tab="schedule">
+						<img src="icons/schedule.png" alt="Планирование" class="tab-icon" />
+						<span class="tab-label">Планирование</span>
+					</button>
+					<button class="tab-button" data-tab="settings">
+						<img src="icons/gear.png" alt="Настройки" class="tab-icon" />
+						<span class="tab-label">Настройки</span>
+					</button>
+				</div>
 			</div>
-		</div>
 
-		<!-- Контейнер для динамического содержимого вкладок -->
-		<div id="contentContainer">
-			<!-- Шаблоны, скрытые от отображения -->
-			<template id="sessionsTabTemplate">
-				<!-- Содержимое вкладки "Сессии" -->
-				<div class="tab-content" id="sessions">
-					<h1>Session Saver</h1>
-					<div class="sessions-controls">
-						<input type="text" id="searchInput" placeholder="Поиск сессий..." />
-						<button id="createGroupBtn" class="button-small">
-							<!-- Вставьте свою иконку здесь -->
-							<img
-								src="icons/add.png"
-								alt="Создать Группу"
-								class="button-icon"
-							/>
-							Создать Группу
-						</button>
-					</div>
-					<div class="sessions-container">
-						<div class="session-list" id="autoSessions">
-							<h2>Автоматические Сессии</h2>
-							<p>Нет доступных сессий</p>
-						</div>
-						<div class="session-list" id="changeSessions">
-							<h2>Сессии при Изменении Вкладок</h2>
-							<p>Нет доступных сессий</p>
-						</div>
-					</div>
-					<div class="controls">
-						<button id="saveBtn" class="button">
-							<!-- Вставьте свою иконку здесь -->
-							<img src="icons/save.png" alt="Сохранить" class="button-icon" />
-							Сохранить Текущую Сессию
-						</button>
-					</div>
-				</div>
-			</template>
-
-			<template id="statisticsTabTemplate">
-				<!-- Содержимое вкладки "Статистика" -->
-				<div class="tab-content" id="statistics">
-					<div class="header">
-						<div class="back-button" id="backBtnStatistics">
-							<img src="icons/back.png" alt="Назад" />
-						</div>
-						<h2>Статистика</h2>
-					</div>
-					<div class="statistics-container">
-						<div class="statistics-item">
-							<h3>Всего Сессий</h3>
-							<p id="totalSessions">0</p>
-						</div>
-						<div class="statistics-item">
-							<h3>Всего Вкладок</h3>
-							<p id="totalTabs">0</p>
-						</div>
-						<div class="statistics-item">
-							<h3>Самый Частый Сайт</h3>
-							<p id="mostFrequentSite">N/A</p>
-						</div>
-					</div>
-				</div>
-			</template>
-
-			<template id="scheduleTabTemplate">
-				<!-- Содержимое вкладки "Планирование" -->
-				<div class="tab-content" id="schedule">
-					<div class="header">
-						<div class="back-button" id="backBtnSchedule">
-							<img src="icons/back.png" alt="Назад" />
-						</div>
-						<h2>Планирование</h2>
-					</div>
-					<div class="schedule-container">
-						<p>Планирование пока не доступно.</p>
-						<!-- Здесь будет интерфейс для планирования действий -->
-					</div>
-				</div>
-			</template>
-
-			<template id="settingsTabTemplate">
-				<!-- Содержимое вкладки "Настройки" -->
-				<div class="tab-content" id="settings">
-					<div class="settings-content">
-						<div class="header">
-							<div class="back-button" id="backBtn">
-								<img src="icons/back.png" alt="Назад" />
+			<!-- Контейнер для динамического содержимого вкладок -->
+			<div id="contentContainer">
+				<!-- Шаблоны, скрытые от отображения -->
+				<template id="sessionsTabTemplate">
+					<!-- Содержимое вкладки "Сессии" -->
+					<div class="tab-content" id="sessions">
+						<div class="tab-inner-content">
+							<div class="header">
+								<h1>Сессии</h1>
 							</div>
-							<h2>Настройки</h2>
-						</div>
-						<div class="settings-items">
-							<!-- Интервал Автобэкапа -->
-							<div class="setting-item">
-								<img src="icons/time.png" alt="Интервал" class="setting-icon" />
-								<label for="intervalInput">Интервал Автобэкапа (минут):</label>
-								<input type="number" id="intervalInput" min="1" value="10" />
-							</div>
-
-							<!-- Переключатель Уведомлений -->
-							<div class="setting-item notification-toggle">
-								<img
-									src="icons/notification.png"
-									alt="Уведомления"
-									class="setting-icon"
+							<div class="sessions-controls">
+								<input
+									type="text"
+									id="searchInput"
+									placeholder="Поиск сессий..."
 								/>
-								<span class="toggle-label">Push Уведомления:</span>
-								<label class="switch">
-									<input type="checkbox" id="notificationSwitch" />
-									<span class="slider"></span>
-								</label>
+								<button id="createGroupBtn" class="button-small">
+									<img
+										src="icons/add.png"
+										alt="Создать Группу"
+										class="button-icon"
+									/>
+									Создать Группу
+								</button>
 							</div>
-
-							<!-- Переключатель Темы -->
-							<div class="setting-item theme-toggle-container">
-								<span class="toggle-label">Тема:</span>
-								<div class="theme-icons">
-									<img
-										src="icons/sun.png"
-										alt="Светлая тема"
-										class="theme-icon"
-									/>
-									<label class="switch">
-										<input type="checkbox" id="themeSwitch" />
-										<span class="slider"></span>
-									</label>
-									<img
-										src="icons/moon.png"
-										alt="Тёмная тема"
-										class="theme-icon"
-									/>
+							<div class="sessions-container">
+								<div class="session-list" id="autoSessions">
+									<h3>Автоматические Сессии</h3>
+									<p>Нет доступных сессий</p>
+								</div>
+								<div class="session-list" id="changeSessions">
+									<h3>Сессии при Изменении Вкладок</h3>
+									<p>Нет доступных сессий</p>
 								</div>
 							</div>
-
-							<!-- Экспорт и Импорт -->
-							<div class="setting-item import-export-container">
-								<h3>Экспорт/Импорт Сессий</h3>
-								<button id="exportBtn" class="button-small">
-									Экспортировать Сессии
-								</button>
-								<input
-									type="file"
-									id="importFileInput"
-									accept="application/json"
-									style="display: none"
-								/>
-								<button id="importBtn" class="button-small">
-									Импортировать Сессии
+							<div class="controls">
+								<button id="saveBtn" class="button">
+									<img
+										src="icons/save.png"
+										alt="Сохранить"
+										class="button-icon"
+									/>
+									Сохранить Текущую Сессию
 								</button>
 							</div>
 						</div>
 					</div>
-				</div>
-			</template>
-		</div>
+				</template>
 
-		<!-- Подключение скрипта -->
+				<template id="statisticsTabTemplate">
+					<!-- Содержимое вкладки "Статистика" -->
+					<div class="tab-content" id="statistics">
+						<div class="tab-inner-content">
+							<div class="header">
+								<div class="back-button" id="backBtnStatistics">
+									<img src="icons/back.png" alt="Назад" />
+								</div>
+								<h2>Статистика</h2>
+							</div>
+							<div class="statistics-container">
+								<div class="statistics-item">
+									<h3>Всего Сессий</h3>
+									<p id="totalSessions">0</p>
+								</div>
+								<div class="statistics-item">
+									<h3>Всего Вкладок</h3>
+									<p id="totalTabs">0</p>
+								</div>
+								<div class="statistics-item">
+									<h3>Самый Частый Сайт</h3>
+									<p id="mostFrequentSite">N/A</p>
+								</div>
+							</div>
+						</div>
+					</div>
+				</template>
+
+				<template id="scheduleTabTemplate">
+					<!-- Содержимое вкладки "Планирование" -->
+					<div class="tab-content" id="schedule">
+						<div class="tab-inner-content">
+							<div class="header">
+								<div class="back-button" id="backBtnSchedule">
+									<img src="icons/back.png" alt="Назад" />
+								</div>
+								<h2>Планирование</h2>
+							</div>
+							<div class="schedule-container">
+								<p>Планирование пока не доступно.</p>
+							</div>
+						</div>
+					</div>
+				</template>
+
+				<template id="settingsTabTemplate">
+					<!-- Содержимое вкладки "Настройки" -->
+					<div class="tab-content" id="settings">
+						<div class="tab-inner-content">
+							<div class="header">
+								<div class="back-button" id="backBtn">
+									<img src="icons/back.png" alt="Назад" />
+								</div>
+								<h2>Настройки</h2>
+							</div>
+							<div class="settings-items">
+								<!-- Интервал Автобэкапа -->
+								<div class="setting-item">
+									<img
+										src="icons/time.png"
+										alt="Интервал"
+										class="setting-icon"
+									/>
+									<label for="intervalInput"
+										>Интервал Автобэкапа (минут):</label
+									>
+									<input type="number" id="intervalInput" min="1" value="10" />
+								</div>
+
+								<!-- Переключатель Уведомлений -->
+								<div class="setting-item notification-toggle">
+									<img
+										src="icons/notification.png"
+										alt="Уведомления"
+										class="setting-icon"
+									/>
+									<span class="toggle-label">Push Уведомления:</span>
+									<label class="switch">
+										<input type="checkbox" id="notificationSwitch" />
+										<span class="slider"></span>
+									</label>
+								</div>
+
+								<!-- Переключатель Темы -->
+								<div class="setting-item theme-toggle-container">
+									<span class="toggle-label">Тема:</span>
+									<div class="theme-icons">
+										<img
+											src="icons/sun.png"
+											alt="Светлая тема"
+											class="theme-icon"
+										/>
+										<label class="switch">
+											<input type="checkbox" id="themeSwitch" />
+											<span class="slider"></span>
+										</label>
+										<img
+											src="icons/moon.png"
+											alt="Тёмная тема"
+											class="theme-icon"
+										/>
+									</div>
+								</div>
+
+								<!-- Экспорт и Импорт -->
+								<div class="setting-item import-export-container">
+									<h3>Экспорт/Импорт Сессий</h3>
+									<button id="exportBtn" class="button-small">
+										Экспортировать Сессии
+									</button>
+									<input
+										type="file"
+										id="importFileInput"
+										accept="application/json"
+										style="display: none"
+									/>
+									<button id="importBtn" class="button-small">
+										Импортировать Сессии
+									</button>
+								</div>
+							</div>
+						</div>
+					</div>
+				</template>
+			</div>
+		</main>
 		<script src="popup.js"></script>
 	</body>
 </html>
