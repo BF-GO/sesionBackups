@@ -18,6 +18,7 @@
 	--font-family: 'Roboto', sans-serif;
 	--modal-background: rgba(0, 0, 0, 0.5);
 	--modal-content-background: #ffffff;
+	--scrollbar-width: 8px;
 }
 
 .dark-theme {
@@ -38,12 +39,16 @@
 body,
 html {
 	font-family: var(--font-family);
+	height: auto;
 	margin: 0;
 	padding: 0;
 }
 
 main {
+	background-color: var(--card-background);
+	transition: background-color 0.3s;
 	width: 410px;
+	height: 596px;
 }
 
 .tab-container {
@@ -70,10 +75,12 @@ main {
 	flex-grow: 1;
 	border: none;
 	padding: 10px 0;
+	color: var(--text-color);
 	width: 90px;
 	transition: background-color 0.3s, border-bottom 0.3s;
 	border-bottom: 3px solid transparent;
 	border-radius: 12px 12px 0 0;
+	background-color: var(--card-background);
 }
 
 .tab-button:hover {
@@ -95,12 +102,15 @@ main {
 	flex-grow: 1;
 	overflow-y: auto;
 	background-color: var(--background-color);
-	width: 396px;
+	width: 390px;
 	transition: background-color 0.3s;
 	display: flex;
 	flex-direction: column;
 	align-items: center;
 	margin: auto;
+	height: 500px;
+	border-radius: 10px;
+	margin-bottom: 10px;
 }
 
 .tab-inner-content {
@@ -108,6 +118,8 @@ main {
 	flex-direction: column;
 	flex-wrap: nowrap;
 	gap: 12px;
+	margin-right: 6px;
+	margin-left: calc(6px + var(--scrollbar-width));
 }
 
 h1,
@@ -200,6 +212,7 @@ a:hover {
 	flex-direction: column;
 	gap: 20px;
 	width: 100%;
+	height: 500px;
 }
 
 .session-list {
@@ -398,7 +411,7 @@ a:hover {
 .setting-item input[type='number'] {
 	width: 80px;
 	padding: 8px;
-	border: 1ps solid var(--border-color);
+	border: 1px solid var(--border-color);
 	border-radius: 4px;
 	background-color: var(--card-background);
 	color: var(--text-color);
@@ -474,11 +487,15 @@ a:hover {
 #contentContainer::-webkit-scrollbar,
 .tabs-container::-webkit-scrollbar,
 .session-list::-webkit-scrollbar {
-	width: 8px;
+	width: var(--scrollbar-width);
 	height: 8px;
 }
 
-#contentContainer::-webkit-scrollbar-track,
+#contentContainer::-webkit-scrollbar-track {
+	margin: 90px 0 6px 0;
+	background: transparent;
+}
+
 .tabs-container::-webkit-scrollbar-track,
 .session-list::-webkit-scrollbar-track {
 	background: transparent;
