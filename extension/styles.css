@@ -3,63 +3,110 @@
 
 /* Переменные темы */
 :root {
-	/* Светлая тема */
-	--background-color: #f9f9f9;
+	/* Основные цвета */
+	--background-color: #f0f0f0; /* Немного тёмнее для лучшего контраста */
 	--text-color: #2c3e50;
 	--primary-color: #3498db;
 	--primary-hover: #2980b9;
 	--secondary-color: #2ecc71;
 	--secondary-hover: #27ae60;
-	--border-color: #bdc3c7;
+	--border-color: #cccccc; /* Немного тёмнее для лучшей видимости границ */
+
+	/* Фоновые цвета */
 	--card-background: #ffffff;
-	--toggle-bg: #ecf0f1;
-	--toggle-thumb: #ffffff;
-	--session-item-hover-bg: #ecf0f1;
-	--font-family: 'Roboto', sans-serif;
 	--modal-background: rgba(0, 0, 0, 0.5);
 	--modal-content-background: #ffffff;
+	--toggle-bg: #e0e0e0; /* Немного тёмнее для лучшего разделения */
+	--toggle-thumb: #ffffff;
+	--session-item-hover-bg: #e8e8e8; /* Немного тёмнее для эффекта наведения */
+
+	/* Типографика */
+	--font-family: 'Roboto', sans-serif;
+
+	/* Скроллбар */
 	--scrollbar-width: 8px;
+	--scrollbar-thumb: rgba(0, 0, 0, 0.2);
+	--scrollbar-thumb-hover: rgba(0, 0, 0, 0.4);
+
+	/* Дополнительные переменные для светлой темы */
+	--header-background: #ffffff;
+	--button-background: #3498db;
+	--button-hover: #2980b9;
+	--input-background: #ffffff;
+	--input-border: #cccccc; /* Немного тёмнее для лучшей видимости */
 }
 
+/* Темная тема */
 .dark-theme {
-	--background-color: #1e272e;
-	--text-color: #d2dae2;
-	--primary-color: #9b59b6;
-	--primary-hover: #8e44ad;
-	--secondary-color: #e74c3c;
-	--secondary-hover: #c0392b;
-	--border-color: #485460;
-	--card-background: #2f3640;
-	--toggle-bg: #485460;
-	--toggle-thumb: #d2dae2;
-	--session-item-hover-bg: #353b48;
-	--modal-content-background: #2f3640;
+	/* Основные цвета */
+	--background-color: #121212;
+	--text-color: #e0e0e0;
+
+	/* Цвета элементов интерфейса */
+	--primary-color: #bb86fc;
+	--primary-hover: #9f6efc;
+	--secondary-color: #03dac6;
+	--secondary-hover: #029eaa;
+
+	/* Цвета границ и карточек */
+	--border-color: #272727;
+	--card-background: #1e1e1e;
+
+	/* Переключатели и кнопки */
+	--toggle-bg: #333333;
+	--toggle-thumb: #bb86fc;
+	--session-item-hover-bg: #2c2c2c;
+
+	/* Модальные окна */
+	--modal-background: rgba(0, 0, 0, 0.7);
+	--modal-content-background: #2c2c2c;
+
+	/* Скроллбар */
+	--scrollbar-thumb: rgba(255, 255, 255, 0.3);
+	--scrollbar-thumb-hover: rgba(255, 255, 255, 0.6);
+
+	/* Дополнительные цвета */
+	--header-background: #1f1f1f;
+	--button-background: #bb86fc;
+	--button-hover: #9f6efc;
+	--input-background: #2c2c2c;
+	--input-border: #444444;
 }
 
+/* Общие стили */
 body,
 html {
 	font-family: var(--font-family);
 	height: auto;
 	margin: 0;
 	padding: 0;
+	background-color: var(--background-color);
+	color: var(--text-color);
+	transition: background-color 0.3s, color 0.3s;
 }
 
+/* Основной контейнер */
 main {
 	background-color: var(--card-background);
-	transition: background-color 0.3s;
 	width: 410px;
 	height: 596px;
+	overflow: hidden;
+	border-radius: 10px;
+	transition: background-color 0.3s;
+	box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Добавлена тень */
 }
 
+/* Контейнер вкладок */
 .tab-container {
-	background-color: var(--card-background);
+	background-color: var(--header-background);
 	position: sticky;
 	top: 0;
 	z-index: 10;
-	transition: background-color 0.3s;
 	overflow: hidden;
+	transition: background-color 0.3s;
 }
 
+/* Вкладки */
 .tabs {
 	display: flex;
 	justify-content: space-around;
@@ -73,18 +120,20 @@ main {
 	align-items: center;
 	cursor: pointer;
 	flex-grow: 1;
-	border: none;
-	padding: 10px 0;
-	color: var(--text-color);
 	width: 90px;
-	transition: background-color 0.3s, border-bottom 0.3s;
+	padding: 10px 0;
+	border: none;
 	border-bottom: 3px solid transparent;
 	border-radius: 12px 12px 0 0;
 	background-color: var(--card-background);
+	color: var(--text-color);
+	transition: background-color 0.3s, border-bottom 0.3s, transform 0.2s;
+	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05); /* Добавлена лёгкая тень */
 }
 
 .tab-button:hover {
 	background-color: var(--session-item-hover-bg);
+	transform: translateY(-2px);
 }
 
 .tab-button.active {
@@ -92,36 +141,52 @@ main {
 	background-color: var(--session-item-hover-bg);
 }
 
+.tab-button.active .tab-icon {
+	transform: scale(1.1);
+}
+
 .tab-button .tab-icon {
 	width: 24px;
 	height: 24px;
 	margin-bottom: 4px;
+	transition: transform 0.3s;
 }
 
+/* Контейнер контента */
 #contentContainer {
 	flex-grow: 1;
 	overflow-y: auto;
 	background-color: var(--background-color);
 	width: 390px;
-	transition: background-color 0.3s;
+	height: 500px;
+	margin: auto;
+	margin-bottom: 10px;
+	border-radius: 10px;
+	opacity: 0;
 	display: flex;
 	flex-direction: column;
 	align-items: center;
-	margin: auto;
-	height: 500px;
-	border-radius: 10px;
-	margin-bottom: 10px;
+	transition: background-color 0.3s, opacity 0.5s;
+	animation: fadeIn 0.5s forwards;
 }
 
+@keyframes fadeIn {
+	to {
+		opacity: 1;
+	}
+}
+
+/* Внутренний контент вкладок */
 .tab-inner-content {
 	display: flex;
 	flex-direction: column;
 	flex-wrap: nowrap;
 	gap: 12px;
-	margin-right: 6px;
 	margin-left: calc(6px + var(--scrollbar-width));
+	margin-right: 6px;
 }
 
+/* Заголовки */
 h1,
 h2,
 h3 {
@@ -138,41 +203,52 @@ h2 {
 
 h3 {
 	font-size: 16px;
+	border-bottom: 1px solid var(--border-color); /* Добавлена граница для разделения */
+	padding-bottom: 5px;
 }
 
+/* Абзацы и ссылки */
 p {
 	font-size: 16px;
 	color: var(--text-color);
 }
 
-a {
-	color: var(--primary-color);
-	text-decoration: none;
+.session-list p {
+	color: #7f8c8d; /* Более светлый цвет для описаний */
 }
 
-a:hover {
-	text-decoration: underline;
-}
-
+/* Кнопки */
 .button,
 .button-small {
 	display: inline-flex;
 	align-items: center;
-	background-color: var(--primary-color);
+	background-color: var(--button-background);
 	color: white;
 	padding: 10px 20px;
 	font-size: 14px;
 	border: none;
 	border-radius: 30px;
 	cursor: pointer;
-	transition: background-color 0.3s, box-shadow 0.3s;
 	text-decoration: none;
+	transition: background-color 0.3s, box-shadow 0.3s, transform 0.2s;
+	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Добавлена тень для глубины */
+}
+
+.button-small {
+	padding: 8px 16px;
 }
 
 .button:hover,
 .button-small:hover {
-	background-color: var(--primary-hover);
-	box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+	background-color: var(--button-hover);
+	box-shadow: 0 4px 6px rgba(0, 0, 0, 0.15);
+	transform: translateY(-2px);
+}
+
+.button:active,
+.button-small:active {
+	transform: translateY(0);
+	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .button .button-icon,
@@ -182,10 +258,7 @@ a:hover {
 	margin-right: 8px;
 }
 
-.button-small {
-	padding: 8px 16px;
-}
-
+/* Контролы сессий */
 .sessions-controls {
 	display: flex;
 	align-items: center;
@@ -195,18 +268,26 @@ a:hover {
 .sessions-controls input[type='text'] {
 	flex-grow: 1;
 	padding: 10px;
-	border: 1px solid var(--border-color);
+	border: 1px solid var(--input-border);
 	border-radius: 30px;
 	margin-right: 10px;
-	background-color: var(--card-background);
+	background-color: var(--input-background);
 	color: var(--text-color);
+	transition: background-color 0.3s, border-color 0.3s, box-shadow 0.3s;
+}
+
+.sessions-controls input[type='text']:focus {
+	outline: none;
+	border-color: var(--primary-color);
+	box-shadow: 0 0 5px rgba(52, 152, 219, 0.5); /* Добавлена тень при фокусе */
 }
 
 .sessions-controls input[type='text']::placeholder {
-	color: var(--text-color);
-	opacity: 0.6;
+	color: #7f8c8d; /* Более светлый серый для плейсхолдера */
+	opacity: 1;
 }
 
+/* Контейнер сессий */
 .sessions-container {
 	display: flex;
 	flex-direction: column;
@@ -215,10 +296,10 @@ a:hover {
 	height: 500px;
 }
 
+/* Список сессий */
 .session-list {
-	background-color: var(--background-color);
+	background-color: var(--card-background);
 	padding: 15px;
-	justify-content: center;
 	border-radius: 12px;
 	border: 1px solid var(--border-color);
 	max-height: 400px;
@@ -226,26 +307,29 @@ a:hover {
 	transition: background-color 0.3s, border-color 0.3s;
 }
 
-.session-list h2 {
+.session-list h3 {
 	margin-top: 0;
 	margin-bottom: 8px;
 	color: var(--text-color);
+	border-bottom: 1px solid var(--border-color); /* Разделитель между заголовком и списком */
+	padding-bottom: 5px;
 }
 
 .session-list p {
 	margin: 0;
-	color: var(--text-color);
+	color: #7f8c8d; /* Более светлый цвет для описаний */
 }
 
+/* Элемент сессии */
 .session-item {
 	display: flex;
 	flex-direction: column;
 	padding: 10px;
-	border-bottom: 1px solid var(--border-color);
-	transition: background-color 0.3s, transform 0.3s;
-	border-radius: 10px;
 	margin-bottom: 6px;
 	background-color: var(--card-background);
+	border-bottom: 1px solid var(--border-color);
+	border-radius: 10px;
+	transition: background-color 0.3s, transform 0.3s;
 }
 
 .session-item:last-child {
@@ -257,6 +341,7 @@ a:hover {
 	transform: scale(1.01);
 }
 
+/* Заголовок сессии */
 .session-header {
 	display: flex;
 	justify-content: space-between;
@@ -265,19 +350,22 @@ a:hover {
 
 .session-header span {
 	font-weight: 500;
-	color: var(--text-color);
 	font-size: 16px;
+	color: var(--text-color);
 }
 
+/* Детали сессии */
 .session-details {
 	padding: 10px 20px;
-	border-top: 1px solid var(--border-color);
 	margin-top: 10px;
+	border-top: 1px solid var(--border-color);
 	background-color: var(--card-background);
 	border-radius: 8px;
 	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+	transition: background-color 0.3s, box-shadow 0.3s;
 }
 
+/* Кнопка восстановления */
 .restore-btn {
 	margin-top: 10px;
 	background-color: var(--secondary-color);
@@ -285,13 +373,19 @@ a:hover {
 	padding: 6px 12px;
 	border-radius: 6px;
 	cursor: pointer;
-	transition: background-color 0.3s;
+	transition: background-color 0.3s, transform 0.2s;
 }
 
 .restore-btn:hover {
 	background-color: var(--secondary-hover);
+	transform: translateY(-1px);
 }
 
+.restore-btn:active {
+	transform: translateY(0);
+}
+
+/* Элементы окна */
 .window-item {
 	margin-bottom: 15px;
 }
@@ -301,6 +395,7 @@ a:hover {
 	margin-bottom: 10px;
 }
 
+/* Контейнер вкладок (активный/неактивный) */
 .tabs-container {
 	display: none;
 	padding-left: 20px;
@@ -309,8 +404,21 @@ a:hover {
 
 .tabs-container.active {
 	display: block;
+	animation: slideDown 0.3s forwards;
 }
 
+@keyframes slideDown {
+	from {
+		opacity: 0;
+		transform: translateY(-10px);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+/* Список вкладок */
 .tabs-container ul {
 	list-style: none;
 	padding-left: 0;
@@ -325,21 +433,26 @@ a:hover {
 	border-bottom: 1px solid var(--border-color);
 }
 
-.tabs ul li:last-child {
+.tabs-container ul li:last-child {
 	border-bottom: none;
 }
 
 .tabs-container ul li a {
 	display: flex;
 	align-items: center;
-	text-decoration: none;
-	color: var(--primary-color);
-	transition: color 0.3s;
 	width: 100%;
+	color: var(--primary-color);
+	text-decoration: none;
+	transition: color 0.3s;
 }
 
 .tabs-container ul li a:hover {
 	color: var(--primary-hover);
+}
+
+/* Контент вкладки */
+.tab-content {
+	width: 100%;
 }
 
 .tab-content .header {
@@ -347,20 +460,6 @@ a:hover {
 	align-items: center;
 	width: 100%;
 	position: relative;
-}
-
-.tab-content {
-	width: 100%;
-}
-
-.tab-content .header .back-button {
-	position: absolute;
-	left: 0;
-}
-
-.tab-content .header .back-button img {
-	width: 100%;
-	height: 100%;
 }
 
 .tab-content .header h1,
@@ -372,6 +471,17 @@ a:hover {
 	text-align: center;
 }
 
+.tab-content .header .back-button {
+	position: absolute;
+	left: 0;
+}
+
+.tab-content .header .back-button img {
+	width: 24px;
+	height: 24px;
+}
+
+/* Настройки */
 .settings-items {
 	display: flex;
 	flex-direction: column;
@@ -382,8 +492,8 @@ a:hover {
 	display: flex;
 	align-items: center;
 	gap: 15px;
-	background-color: var(--card-background);
 	padding: 15px;
+	background-color: var(--card-background);
 	border-radius: 12px;
 	transition: background-color 0.3s;
 }
@@ -411,10 +521,11 @@ a:hover {
 .setting-item input[type='number'] {
 	width: 80px;
 	padding: 8px;
-	border: 1px solid var(--border-color);
+	border: 1px solid var(--input-border);
 	border-radius: 4px;
-	background-color: var(--card-background);
+	background-color: var(--input-background);
 	color: var(--text-color);
+	transition: background-color 0.3s, border-color 0.3s;
 }
 
 .setting-item input[type='number']:focus {
@@ -422,6 +533,39 @@ a:hover {
 	border-color: var(--primary-color);
 }
 
+.setting-item input[type='number']::placeholder {
+	color: #7f8c8d;
+	opacity: 1;
+}
+
+.import-export-container {
+	display: grid;
+	grid-template-columns: 1fr auto;
+	grid-template-rows: auto auto;
+	gap: 10px;
+	align-items: start;
+}
+
+.import-export-container h3 {
+	grid-column: 1 / 2;
+	grid-row: 1 / span 2;
+	align-self: center;
+}
+
+.import-export-container button {
+	grid-column: 2;
+	width: 100%;
+}
+
+#importBtn {
+	grid-row: 1; /* Располагает кнопку "Экспортировать Сессии" в первой строке второго столбца */
+}
+
+#exportBtn {
+	grid-row: 2; /* Располагает кнопку "Импортировать Сессии" во второй строке второго столбца */
+}
+
+/* Переключатели */
 .switch {
 	position: relative;
 	display: inline-block;
@@ -438,23 +582,23 @@ a:hover {
 
 .slider {
 	position: absolute;
-	cursor: pointer;
-	background-color: var(--toggle-bg);
-	border-radius: 34px;
 	top: 0;
 	left: 0;
 	right: 0;
 	bottom: 0;
+	cursor: pointer;
+	background-color: var(--toggle-bg);
+	border-radius: 34px;
 	transition: background-color 0.4s, box-shadow 0.4s;
 }
 
 .slider::before {
 	content: '';
 	position: absolute;
-	height: 24px;
 	width: 24px;
-	left: 2px;
+	height: 24px;
 	top: 2px;
+	left: 2px;
 	background-color: var(--toggle-thumb);
 	border-radius: 50%;
 	transition: transform 0.4s, box-shadow 0.2s;
@@ -474,6 +618,7 @@ a:hover {
 	box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
 }
 
+/* Контейнер переключения темы */
 .theme-toggle-container {
 	display: flex;
 	align-items: center;
@@ -484,6 +629,7 @@ a:hover {
 	margin: 0 10px;
 }
 
+/* Скроллбар */
 #contentContainer::-webkit-scrollbar,
 .tabs-container::-webkit-scrollbar,
 .session-list::-webkit-scrollbar {
@@ -492,8 +638,7 @@ a:hover {
 }
 
 #contentContainer::-webkit-scrollbar-track {
-	margin: 90px 0 6px 0;
-	background: transparent;
+	margin: 90px 0 52px 0;
 }
 
 .tabs-container::-webkit-scrollbar-track,
@@ -505,21 +650,28 @@ a:hover {
 #contentContainer::-webkit-scrollbar-thumb,
 .tabs-container::-webkit-scrollbar-thumb,
 .session-list::-webkit-scrollbar-thumb {
-	background-color: rgba(0, 0, 0, 0.2);
-	border-radius: 4px;
+	background-color: var(--scrollbar-thumb);
 	border: 1px solid transparent;
+	border-radius: 4px;
 }
 
 #contentContainer::-webkit-scrollbar-thumb:hover,
 .tabs-container::-webkit-scrollbar-thumb:hover,
 .session-list::-webkit-scrollbar-thumb:hover {
-	background-color: rgba(0, 0, 0, 0.4);
+	background-color: var(--scrollbar-thumb-hover);
 }
 
+/* Кнопки возврата */
 .back-button {
 	display: flex;
 	align-items: center;
 	justify-content: center;
+	cursor: pointer;
+	transition: transform 0.3s;
+}
+
+.back-button:hover {
+	transform: rotate(90deg);
 }
 
 .back-button img {
@@ -527,6 +679,11 @@ a:hover {
 	height: 24px;
 }
 
-.controls {
-	margin-bottom: 14px;
+/* Плавные переходы для интерактивных элементов */
+.tab-button,
+.button,
+.button-small,
+.setting-item,
+.switch .slider {
+	transition: background-color 0.3s, color 0.3s, transform 0.3s;
 }
