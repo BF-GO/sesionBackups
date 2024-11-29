@@ -120,7 +120,82 @@
 								<h2>Планирование</h2>
 							</div>
 							<div class="schedule-container">
-								<p>Планирование пока не доступно.</p>
+								<div class="schedule-form">
+									<!-- Радио-кнопки для выбора типа планировки -->
+									<div class="schedule-option">
+										<label>
+											<input
+												type="radio"
+												name="scheduleType"
+												value="session"
+												id="scheduleSessionOption"
+												<!--
+												Добавлен
+												id
+												--
+											/>
+											checked /> Выбрать сохранённую сессию
+										</label>
+										<label>
+											<input
+												type="radio"
+												name="scheduleType"
+												value="custom"
+												id="scheduleCustomOption"
+												<!--
+												Добавлен
+												id
+												--
+											/>
+											/> Ввести свои ссылки
+										</label>
+									</div>
+
+									<!-- Выбор сохраненной сессии -->
+									<div id="sessionScheduleOptions">
+										<!-- Изменён ID -->
+										<label for="sessionSelect"
+											>Выберите сессию для восстановления:</label
+										>
+										<select id="sessionSelect">
+											<!-- Опции будут заполнены динамически -->
+										</select>
+									</div>
+
+									<!-- Ввод своих ссылок -->
+									<div id="customScheduleOptions" style="display: none">
+										<!-- Изменён ID -->
+										<label>Введите ссылки:</label>
+										<div id="customUrlsContainer">
+											<div class="url-input-group">
+												<input
+													type="url"
+													class="customUrl"
+													placeholder="https://example.com"
+													required
+												/>
+											</div>
+										</div>
+										<button type="button" id="addUrlBtn" class="button-small">
+											+
+										</button>
+									</div>
+
+									<label for="scheduleDateTime"
+										>Выберите дату и время открытия:</label
+									>
+									<input type="datetime-local" id="scheduleDateTime" />
+
+									<button id="addScheduleBtn" class="button-small">
+										Добавить Планировку
+									</button>
+								</div>
+								<div class="scheduled-list">
+									<h3>Запланированные открытия</h3>
+									<ul id="scheduledSessionsList">
+										<!-- Список запланированных сессий будет заполнен динамически -->
+									</ul>
+								</div>
 							</div>
 						</div>
 					</div>

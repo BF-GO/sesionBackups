@@ -78,7 +78,7 @@ document.addEventListener('DOMContentLoaded', () => {
 					const clone = scheduleTabTemplate.content.cloneNode(true);
 					contentContainer.appendChild(clone);
 					console.log('Loaded Schedule tab template');
-					attachScheduleTabEventListeners();
+					attachScheduleTabEventListeners(); // Updated function
 				} else {
 					console.error('scheduleTabTemplate not found');
 				}
@@ -250,7 +250,7 @@ document.addEventListener('DOMContentLoaded', () => {
 		}
 
 		return date.toLocaleString('ru-RU', {
-			timeZone: 'Europe/Helsinki',
+			timeZone: 'Europe/Moscow', // Updated timezone
 			day: '2-digit',
 			month: '2-digit',
 			year: 'numeric',
@@ -541,9 +541,319 @@ document.addEventListener('DOMContentLoaded', () => {
 
 	// --- Функции для вкладки "Планирование" ---
 	function attachScheduleTabEventListeners() {
-		// Здесь можно добавить обработчики событий для планирования, если потребуется
 		console.log('Вкладка "Планирование" загружена.');
-		// Пример: можно добавить статическое содержимое или интерфейс для планирования
+
+		const scheduleSessionOption = document.getElementById(
+			'scheduleSessionOption'
+		);
+		const scheduleCustomOption = document.getElementById(
+			'scheduleCustomOption'
+		);
+		const sessionScheduleOptions = document.getElementById(
+			'sessionScheduleOptions'
+		);
+		const customScheduleOptions = document.getElementById(
+			'customScheduleOptions'
+		);
+		const sessionSelect = document.getElementById('sessionSelect');
+		const customUrlsContainer = document.getElementById('customUrlsContainer');
+		const scheduleDateTimeInput = document.getElementById('scheduleDateTime');
+		const addScheduleBtn = document.getElementById('addScheduleBtn');
+		const scheduledSessionsList = document.getElementById(
+			'scheduledSessionsList'
+		);
+		const addUrlBtn = document.getElementById('addUrlBtn');
+
+		if (
+			!sessionSelect ||
+			!scheduleDateTimeInput ||
+			!addScheduleBtn ||
+			!scheduledSessionsList ||
+			!scheduleSessionOption ||
+			!scheduleCustomOption ||
+			!sessionScheduleOptions ||
+			!customScheduleOptions ||
+			!customUrlsContainer ||
+			!addUrlBtn
+		) {
+			console.error('One or more schedule elements not found');
+			return;
+		}
+
+		// Обработчики для переключения типа планировки
+		scheduleSessionOption.addEventListener('change', updateScheduleType);
+		scheduleCustomOption.addEventListener('change', updateScheduleType);
+
+		function updateScheduleType() {
+			if (scheduleSessionOption.checked) {
+				sessionScheduleOptions.style.display = 'block';
+				customScheduleOptions.style.display = 'none';
+			} else if (scheduleCustomOption.checked) {
+				sessionScheduleOptions.style.display = 'none';
+				customScheduleOptions.style.display = 'block';
+			}
+		}
+
+		// Инициализируем видимость элементов на основе выбранного типа планировки
+		updateScheduleType();
+
+		// Загрузить сессии в выпадающий список
+		loadSessionsForScheduling(sessionSelect);
+
+		// Загрузить запланированные сессии
+		loadScheduledSessions();
+
+		// Обработчик для добавления новой планировки
+		addScheduleBtn.addEventListener('click', () => {
+			const scheduleDateTime = scheduleDateTimeInput.value;
+
+			if (!scheduleDateTime) {
+				alert('Пожалуйста, установите дату и время.');
+				return;
+			}
+
+			const scheduleTime = new Date(scheduleDateTime);
+
+			if (isNaN(scheduleTime.getTime())) {
+				alert('Неверный формат даты и времени.');
+				return;
+			}
+
+			if (scheduleTime <= new Date()) {
+				alert('Выберите будущую дату и время.');
+				return;
+			}
+
+			const scheduleId = 'schedule_' + Date.now();
+
+			if (scheduleSessionOption.checked) {
+				const selectedSessionId = sessionSelect.value;
+
+				if (!selectedSessionId) {
+					alert('Пожалуйста, выберите сессию.');
+					return;
+				}
+
+				// Создаем новую запланированную сессию для восстановления
+				const scheduledSession = {
+					id: scheduleId,
+					type: 'session', // Тип планировки
+					sessionId: selectedSessionId,
+					time: scheduleTime.toISOString(),
+				};
+
+				// Сохраняем запланированную сессию
+				saveScheduledSession(scheduledSession);
+			} else if (scheduleCustomOption.checked) {
+				// Собираем все URL из динамических полей ввода
+				const urlInputs = customUrlsContainer.querySelectorAll('.customUrl');
+				const urls = Array.from(urlInputs)
+					.map((input) => input.value.trim())
+					.filter((url) => url);
+
+				if (urls.length === 0) {
+					alert('Пожалуйста, введите хотя бы одну ссылку.');
+					return;
+				}
+
+				// Проверяем корректность URL
+				const invalidUrls = urls.filter((url) => !isValidUrl(url));
+				if (invalidUrls.length > 0) {
+					alert('Найдены недействительные ссылки:\n' + invalidUrls.join('\n'));
+					return;
+				}
+
+				// Создаем новую запланированную сессию для открытия кастомных ссылок
+				const scheduledSession = {
+					id: scheduleId,
+					type: 'custom', // Тип планировки
+					urls: urls,
+					time: scheduleTime.toISOString(),
+				};
+
+				// Сохраняем запланированную сессию
+				saveScheduledSession(scheduledSession);
+			}
+		});
+
+		// Обработчик для добавления новых полей ввода ссылок
+		addUrlBtn.addEventListener('click', () => {
+			addCustomUrlInput();
+		});
+
+		// Функция для добавления нового поля ввода ссылки
+		function addCustomUrlInput() {
+			const urlInputGroup = document.createElement('div');
+			urlInputGroup.className = 'url-input-group';
+
+			const newInput = document.createElement('input');
+			newInput.type = 'url';
+			newInput.className = 'customUrl';
+			newInput.placeholder = 'https://example.com';
+			newInput.required = true;
+
+			const removeBtn = document.createElement('button');
+			removeBtn.type = 'button';
+			removeBtn.className = 'button-small remove-url-btn';
+			removeBtn.textContent = '−'; // Минус для удаления
+
+			// Обработчик удаления поля ввода
+			removeBtn.addEventListener('click', () => {
+				customUrlsContainer.removeChild(urlInputGroup);
+			});
+
+			urlInputGroup.appendChild(newInput);
+			urlInputGroup.appendChild(removeBtn);
+
+			customUrlsContainer.appendChild(urlInputGroup);
+		}
+	}
+
+	// Функция для сохранения запланированной сессии
+	function saveScheduledSession(scheduledSession) {
+		chrome.storage.local.get(['scheduledSessions'], (result) => {
+			let scheduledSessions = result.scheduledSessions || [];
+			scheduledSessions.push(scheduledSession);
+			chrome.storage.local.set({ scheduledSessions }, () => {
+				if (chrome.runtime.lastError) {
+					console.error(
+						'Error saving scheduled session:',
+						chrome.runtime.lastError
+					);
+				} else {
+					// Планируем будильник
+					chrome.runtime.sendMessage(
+						{ action: 'scheduleSession', scheduledSession },
+						(response) => {
+							if (response && response.status === 'success') {
+								// Обновляем интерфейс
+								loadScheduledSessions();
+								alert('Планировка успешно добавлена.');
+							} else {
+								alert('Не удалось добавить планировку.');
+							}
+						}
+					);
+				}
+			});
+		});
+	}
+
+	// Функция для проверки корректности URL
+	function isValidUrl(string) {
+		try {
+			new URL(string);
+			return true;
+		} catch (_) {
+			return false;
+		}
+	}
+
+	// Функция для загрузки запланированных сессий
+	function loadScheduledSessions() {
+		const scheduledSessionsList = document.getElementById(
+			'scheduledSessionsList'
+		);
+		if (!scheduledSessionsList) return;
+
+		chrome.storage.local.get(['scheduledSessions'], (result) => {
+			const scheduledSessions = result.scheduledSessions || [];
+			scheduledSessionsList.innerHTML = '';
+
+			if (scheduledSessions.length === 0) {
+				scheduledSessionsList.innerHTML = '<li>Нет запланированных сессий</li>';
+				return;
+			}
+
+			scheduledSessions.forEach((scheduledSession) => {
+				const listItem = document.createElement('li');
+				const scheduleTime = formatTimestamp(scheduledSession.time);
+				let description = '';
+
+				if (scheduledSession.type === 'session') {
+					description = `Сессия: ${scheduledSession.sessionId}`;
+				} else if (scheduledSession.type === 'custom') {
+					description = `Пользовательские ссылки (${scheduledSession.urls.length})`;
+				}
+
+				listItem.textContent = `${description}, Время: ${scheduleTime}`;
+
+				// Добавляем кнопку отмены
+				const cancelButton = document.createElement('button');
+				cancelButton.textContent = 'Отменить';
+				cancelButton.className = 'button-small';
+				cancelButton.addEventListener('click', () => {
+					// Отменяем запланированную сессию
+					cancelScheduledSession(scheduledSession.id);
+				});
+
+				listItem.appendChild(cancelButton);
+				scheduledSessionsList.appendChild(listItem);
+			});
+		});
+	}
+
+	// Функция для отмены запланированной сессии
+	function cancelScheduledSession(scheduleId) {
+		chrome.storage.local.get(['scheduledSessions'], (result) => {
+			let scheduledSessions = result.scheduledSessions || [];
+			scheduledSessions = scheduledSessions.filter((s) => s.id !== scheduleId);
+
+			chrome.storage.local.set({ scheduledSessions }, () => {
+				if (chrome.runtime.lastError) {
+					console.error(
+						'Error cancelling scheduled session:',
+						chrome.runtime.lastError
+					);
+				} else {
+					// Отменяем будильник
+					chrome.runtime.sendMessage(
+						{ action: 'cancelScheduledSession', scheduleId },
+						(response) => {
+							if (response && response.status === 'success') {
+								// Обновляем интерфейс
+								loadScheduledSessions();
+								alert('Планировка отменена.');
+							} else {
+								alert('Не удалось отменить планировку.');
+							}
+						}
+					);
+				}
+			});
+		});
+	}
+
+	// Функция для загрузки сессий в выпадающий список
+	function loadSessionsForScheduling(sessionSelect) {
+		// Загрузка сессий из хранилища
+		chrome.storage.local.get(['autoSessions', 'changeSessions'], (result) => {
+			const autoSessions = result.autoSessions || [];
+			const changeSessions = result.changeSessions || [];
+			const allSessions = [
+				...autoSessions.map((s, index) => ({
+					...s,
+					type: 'autoSessions',
+					index,
+				})),
+				...changeSessions.map((s, index) => ({
+					...s,
+					type: 'changeSessions',
+					index,
+				})),
+			];
+
+			sessionSelect.innerHTML = '';
+
+			allSessions.forEach((session) => {
+				const option = document.createElement('option');
+				option.value = `${session.type}_${session.index}`;
+				option.textContent = `${
+					session.type === 'autoSessions' ? 'Авто' : 'Изменение'
+				} - ${formatTimestamp(session.timestamp)}`;
+				sessionSelect.appendChild(option);
+			});
+		});
 	}
 
 	// --- Функции для вкладки "Настройки" ---

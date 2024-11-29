@@ -1,134 +1,187 @@
-// background.js
+// Добавьте эти функции и изменения в ваш существующий файл background.js
 
-const MAX_SESSIONS = 5; // Максимальное количество сессий
-const SAVE_DEBOUNCE_DELAY = 1000; // 1 секунда
-
-let saveTimeout = null;
-
-// Функция для сохранения сессии (тип 'auto' или 'change')
-function saveSession(type) {
-	if (saveTimeout) {
-		clearTimeout(saveTimeout);
-	}
-
-	saveTimeout = setTimeout(() => {
-		chrome.windows.getAll({ populate: true }, (windows) => {
-			const session = {
-				timestamp: new Date().toISOString(),
-				windows: windows.map((window) => ({
-					id: window.id,
-					tabs: window.tabs.map((tab) => ({
-						url: tab.url,
-						title: tab.title || tab.url, // Сохраняем заголовок вкладки
-					})),
-				})),
-			};
-
-			const storageKey = type === 'auto' ? 'autoSessions' : 'changeSessions';
-
-			chrome.storage.local.get([storageKey], (result) => {
-				let sessions = result[storageKey] || [];
-				sessions.push(session);
-
-				// Ограничение количества сессий до MAX_SESSIONS
-				if (sessions.length > MAX_SESSIONS) {
-					sessions = sessions.slice(sessions.length - MAX_SESSIONS);
-				}
-
-				chrome.storage.local.set({ [storageKey]: sessions }, () => {
-					if (chrome.runtime.lastError) {
-						console.error(
-							`Error saving ${type} session:`,
-							chrome.runtime.lastError
-						);
-					} else {
-						console.log(`Session of type ${type} saved successfully`);
-
-						// Создание уведомления при успешном сохранении
-						if (type === 'auto') {
-							chrome.storage.local.get(['notificationsEnabled'], (result) => {
-								if (result.notificationsEnabled) {
-									chrome.notifications.create(
-										'',
-										{
-											type: 'basic',
-											iconUrl: 'icons/icon48.png',
-											title: 'Session Saved',
-											message: 'Automatic session backup completed.',
-										},
-										(notificationId) => {
-											if (chrome.runtime.lastError) {
-												console.error(
-													'Notification Error:',
-													chrome.runtime.lastError
-												);
-											} else {
-												console.log(
-													'Notification shown with ID:',
-													notificationId
-												);
-											}
-										}
-									);
-								}
-							});
-						}
-					}
-				});
-			});
-		});
-
-		saveTimeout = null;
-	}, SAVE_DEBOUNCE_DELAY);
-}
-
-// Функция для обновления таймера авто-сохранения
-function updateAutoSaveAlarm() {
-	chrome.storage.local.get(['autoBackupInterval'], (result) => {
-		let interval = result.autoBackupInterval;
-		if (!interval || isNaN(interval) || interval < 1) {
-			interval = 10; // по умолчанию 10 минут
-		}
-		chrome.alarms.create('autoSaveAlarm', {
-			periodInMinutes: parseInt(interval, 10),
-		});
-		console.log('Auto-save alarm set with interval:', interval, 'minutes');
-	});
-}
-
-// Устанавливаем начальный таймер при установке или обновлении расширения
-chrome.runtime.onInstalled.addListener(() => {
-	updateAutoSaveAlarm();
-});
-
-// Слушаем изменения в хранилище для обновления таймера
-chrome.storage.onChanged.addListener((changes, area) => {
-	if (area === 'local' && changes.autoBackupInterval) {
-		updateAutoSaveAlarm();
-	}
-});
-
-// Обработка периодического сохранения сессий
-chrome.alarms.onAlarm.addListener((alarm) => {
-	if (alarm.name === 'autoSaveAlarm') {
-		console.log('Auto-save alarm triggered');
-		saveSession('auto'); // Сохраняем сессию
-	}
-});
-
-// Сохранение сессии при создании или закрытии вкладок
-chrome.tabs.onCreated.addListener(() => {
-	saveSession('change');
-});
-
-chrome.tabs.onRemoved.addListener(() => {
-	saveSession('change');
-});
-
-// Слушаем сообщения от popup для ручного сохранения
+// Обновите слушатель сообщений
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 	if (message.action === 'saveSessionManually') {
 		saveSession('change');
 		sendResponse({ status: 'success' });
+	} else if (message.action === 'scheduleSession') {
+		scheduleSessionRestoration(message.scheduledSession);
+		sendResponse({ status: 'success' });
+	} else if (message.action === 'cancelScheduledSession') {
+		cancelScheduledSession(message.scheduleId);
+		sendResponse({ status: 'success' });
 	}
 });
+
+// Функция для планирования восстановления сессии или открытия кастомных ссылок
+function scheduleSessionRestoration(scheduledSession) {
+	const scheduleTime = new Date(scheduledSession.time).getTime();
+	const currentTime = Date.now();
+	const delayInMinutes = (scheduleTime - currentTime) / 60000;
+
+	if (delayInMinutes <= 0) {
+		console.error('Cannot schedule a session in the past.');
+		return;
+	}
+
+	// Создаем будильник
+	chrome.alarms.create(scheduledSession.id, { when: scheduleTime });
+	console.log(
+		`Scheduled ${scheduledSession.type} with ID ${scheduledSession.id} to trigger at ${scheduledSession.time}`
+	);
+}
+
+// Функция для отмены запланированной сессии
+function cancelScheduledSession(scheduleId) {
+	chrome.alarms.clear(scheduleId, (wasCleared) => {
+		if (wasCleared) {
+			console.log(`Cancelled scheduled session with id: ${scheduleId}`);
+		} else {
+			console.error(
+				`Failed to cancel scheduled session with id: ${scheduleId}`
+			);
+		}
+	});
+}
+
+// Обновите слушатель будильников
+chrome.alarms.onAlarm.addListener((alarm) => {
+	if (alarm.name === 'autoSaveAlarm') {
+		console.log('Auto-save alarm triggered');
+		saveSession('auto'); // Сохраняем сессию
+	} else {
+		// Обработка запланированного восстановления сессии или открытия кастомных ссылок
+		console.log(`Alarm triggered: ${alarm.name}`);
+		restoreScheduledSession(alarm.name);
+	}
+});
+
+// Функция для восстановления запланированной сессии или открытия кастомных ссылок
+function restoreScheduledSession(alarmName) {
+	// alarmName является scheduleId
+	chrome.storage.local.get(['scheduledSessions'], (result) => {
+		const scheduledSessions = result.scheduledSessions || [];
+		const scheduledSession = scheduledSessions.find((s) => s.id === alarmName);
+
+		if (!scheduledSession) {
+			console.error('Scheduled session not found for alarm:', alarmName);
+			return;
+		}
+
+		if (scheduledSession.type === 'session') {
+			// Разбираем sessionId для получения sessionType и индекса
+			const [sessionType, sessionIndex] = scheduledSession.sessionId.split('_');
+			const index = parseInt(sessionIndex, 10);
+
+			chrome.storage.local.get([sessionType], (result) => {
+				const sessions = result[sessionType] || [];
+				const session = sessions[index];
+
+				if (!session) {
+					console.error('Session not found:', sessionType, index);
+					return;
+				}
+
+				// Восстанавливаем все окна из сессии
+				restoreAllWindows(session.windows);
+
+				// Удаляем запланированную сессию, так как она выполнена
+				removeScheduledSession(alarmName);
+			});
+		} else if (scheduledSession.type === 'custom') {
+			// Восстанавливаем пользовательские ссылки
+			restoreCustomUrls(scheduledSession.urls);
+
+			// Удаляем запланированную сессию, так как она выполнена
+			removeScheduledSession(alarmName);
+		}
+	});
+}
+
+// Функция для открытия кастомных ссылок
+function restoreCustomUrls(urls) {
+	if (!urls || urls.length === 0) return;
+
+	// Открываем первую ссылку в новом окне
+	const firstUrl = urls[0];
+	const otherUrls = urls.slice(1);
+
+	chrome.windows.create({ url: firstUrl, state: 'normal' }, (newWindow) => {
+		if (!newWindow || !newWindow.id) {
+			console.error('Failed to create new window.');
+			// Можно добавить уведомление об ошибке
+			return;
+		}
+
+		// Добавляем остальные вкладки
+		otherUrls.forEach((url, index) => {
+			chrome.tabs.create(
+				{
+					windowId: newWindow.id,
+					url,
+					index: index + 1, // Устанавливаем порядок вкладок
+				},
+				(tab) => {
+					if (chrome.runtime.lastError) {
+						console.error('Error creating tab:', chrome.runtime.lastError);
+					}
+				}
+			);
+		});
+	});
+}
+
+// Функция для удаления запланированной сессии из хранилища
+function removeScheduledSession(scheduleId) {
+	chrome.storage.local.get(['scheduledSessions'], (result) => {
+		let scheduledSessions = result.scheduledSessions || [];
+		scheduledSessions = scheduledSessions.filter((s) => s.id !== scheduleId);
+		chrome.storage.local.set({ scheduledSessions });
+	});
+}
+
+// Остальные функции для восстановления окон остаются без изменений
+// Функция для восстановления всех окон
+function restoreAllWindows(windows) {
+	console.log(`Restoring all ${windows.length} windows`);
+	windows.forEach((window, windowIndex) => {
+		setTimeout(() => {
+			restoreWindow(window.tabs);
+		}, windowIndex * 900); // Восстанавливаем каждое окно с задержкой
+	});
+}
+
+// Функция для восстановления отдельного окна
+function restoreWindow(tabs) {
+	console.log(`Restoring window with ${tabs.length} tabs`);
+	if (tabs.length === 0) return; // Проверяем, есть ли вкладки для восстановления
+
+	const firstTab = tabs[0].url;
+	const otherTabs = tabs.slice(1).map((tab) => tab.url);
+
+	// Создаём новое окно с первой вкладкой
+	chrome.windows.create({ url: firstTab, state: 'normal' }, (newWindow) => {
+		if (!newWindow || !newWindow.id) {
+			console.error('Failed to create new window.');
+			// Можно добавить уведомление об ошибке
+			return;
+		}
+
+		// Добавляем остальные вкладки
+		otherTabs.forEach((url, index) => {
+			chrome.tabs.create(
+				{
+					windowId: newWindow.id,
+					url,
+					index: index + 1, // Устанавливаем порядок вкладок
+				},
+				(tab) => {
+					if (chrome.runtime.lastError) {
+						console.error('Error creating tab:', chrome.runtime.lastError);
+					}
+				}
+			);
+		});
+	});
+}
