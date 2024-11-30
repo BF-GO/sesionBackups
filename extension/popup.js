@@ -1,5 +1,3 @@
-// popup.js
-
 const MAX_SESSIONS = 5; // Максимальное количество сессий
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -118,11 +116,12 @@ document.addEventListener('DOMContentLoaded', () => {
 	// Функция для загрузки основной вкладки при запуске
 	loadTab('sessions');
 
-	// --- Функции для вкладки "Сессии" ---
+	// --- Обновлённая функция для вкладки "Сессии" ---
 	function attachSessionsTabEventListeners() {
 		const saveBtn = document.getElementById('saveBtn');
 		const createGroupBtn = document.getElementById('createGroupBtn');
 		const searchInput = document.getElementById('searchInput');
+		const createGroupForm = document.getElementById('createGroupForm');
 
 		if (saveBtn) {
 			saveBtn.addEventListener('click', () => {
@@ -142,17 +141,11 @@ document.addEventListener('DOMContentLoaded', () => {
 			});
 		}
 
-		if (createGroupBtn) {
+		if (createGroupBtn && createGroupForm) {
 			createGroupBtn.addEventListener('click', () => {
 				console.log('Create Group button clicked');
-				const groupName = prompt('Введите название группы:');
-				if (groupName) {
-					showNotification(
-						'Группа Создана',
-						`Группа "${groupName}" успешно создана.`
-					);
-					// Здесь можно добавить логику создания группы
-				}
+				createGroupForm.style.display = 'block';
+				resetCreateGroupForm();
 			});
 		}
 
@@ -164,108 +157,259 @@ document.addEventListener('DOMContentLoaded', () => {
 			});
 		}
 
-		// Обработчики для элементов сессий
+		// Обработчики для переключения типа группы
+		const groupSessionOption = document.getElementById('groupSessionOption');
+		const groupCustomOption = document.getElementById('groupCustomOption');
+		const sessionGroupOptions = document.getElementById('sessionGroupOptions');
+		const customGroupOptions = document.getElementById('customGroupOptions');
+		const customGroupUrlsContainer = document.getElementById(
+			'customGroupUrlsContainer'
+		);
+
+		if (
+			groupSessionOption &&
+			groupCustomOption &&
+			sessionGroupOptions &&
+			customGroupOptions
+		) {
+			groupSessionOption.addEventListener('change', updateGroupType);
+			groupCustomOption.addEventListener('change', updateGroupType);
+		}
+
+		// Функция для обновления типа группы
+		function updateGroupType() {
+			if (groupSessionOption.checked) {
+				sessionGroupOptions.style.display = 'block';
+				customGroupOptions.style.display = 'none';
+			} else if (groupCustomOption.checked) {
+				sessionGroupOptions.style.display = 'none';
+				customGroupOptions.style.display = 'block';
+			}
+		}
+
+		// Инициализируем видимость элементов на основе выбранного типа группы
+		updateGroupType();
+
+		// Обработчики для кнопок "Сохранить Группу" и "Отмена"
+		const saveGroupBtn = document.getElementById('saveGroupBtn');
+		const cancelGroupBtn = document.getElementById('cancelGroupBtn');
+
+		if (saveGroupBtn) {
+			saveGroupBtn.addEventListener('click', saveGroup);
+		}
+
+		if (cancelGroupBtn) {
+			cancelGroupBtn.addEventListener('click', () => {
+				createGroupForm.style.display = 'none';
+			});
+		}
+
+		// Обработчик для добавления новых полей ввода ссылок
+		const addGroupUrlBtn = document.getElementById('addGroupUrlBtn');
+		if (addGroupUrlBtn) {
+			addGroupUrlBtn.addEventListener('click', () => {
+				addCustomGroupUrlInput();
+			});
+		}
+
+		// Обработчики для элементов сессий и групп
 		attachSessionEventListeners();
 	}
 
-	// Фильтрация сессий по запросу
-	function filterSessions(query) {
-		document.querySelectorAll('.session-item').forEach((item) => {
-			const sessionName = item
-				.querySelector('.session-header span')
-				.textContent.toLowerCase();
-			if (sessionName.includes(query)) {
-				item.style.display = 'flex'; // Используем 'flex', чтобы сохранить расположение
-			} else {
-				item.style.display = 'none';
+	// --- Функции для управления группами ---
+
+	// Функция для сохранения группы
+	function saveGroup() {
+		const groupNameInput = document.getElementById('groupNameInput');
+		const groupSessionOption = document.getElementById('groupSessionOption');
+		const groupCustomOption = document.getElementById('groupCustomOption');
+		const customGroupUrlsContainer = document.getElementById(
+			'customGroupUrlsContainer'
+		);
+
+		if (!groupNameInput) return;
+		const groupName = groupNameInput.value.trim();
+
+		if (!groupName) {
+			alert('Пожалуйста, введите название группы.');
+			return;
+		}
+
+		const groupId = 'group_' + Date.now();
+
+		if (groupSessionOption.checked) {
+			const sessionSelectForGroup = document.getElementById(
+				'sessionSelectForGroup'
+			);
+			if (!sessionSelectForGroup) return;
+			const selectedOptions = Array.from(sessionSelectForGroup.selectedOptions);
+			if (selectedOptions.length === 0) {
+				alert('Пожалуйста, выберите хотя бы одну сессию.');
+				return;
 			}
+
+			const sessions = selectedOptions.map((option) => option.value);
+
+			const newGroup = {
+				id: groupId,
+				name: groupName,
+				type: 'session',
+				sessions: sessions,
+			};
+
+			saveGroupToStorage(newGroup);
+		} else if (groupCustomOption.checked) {
+			// Собираем все URL из динамических полей ввода
+			const urlInputs =
+				customGroupUrlsContainer.querySelectorAll('.customGroupUrl');
+			const urls = Array.from(urlInputs)
+				.map((input) => input.value.trim())
+				.filter((url) => url);
+
+			if (urls.length === 0) {
+				alert('Пожалуйста, введите хотя бы одну ссылку.');
+				return;
+			}
+
+			// Проверяем корректность URL
+			const invalidUrls = urls.filter((url) => !isValidUrl(url));
+			if (invalidUrls.length > 0) {
+				alert('Найдены недействительные ссылки:\n' + invalidUrls.join('\n'));
+				return;
+			}
+
+			const newGroup = {
+				id: groupId,
+				name: groupName,
+				type: 'custom',
+				customLinks: urls,
+			};
+
+			saveGroupToStorage(newGroup);
+		}
+	}
+
+	// Функция для сохранения группы в хранилище
+	function saveGroupToStorage(newGroup) {
+		chrome.storage.local.get(['groups'], (result) => {
+			let groups = result.groups || [];
+			groups.push(newGroup);
+			chrome.storage.local.set({ groups }, () => {
+				if (chrome.runtime.lastError) {
+					console.error('Error saving group:', chrome.runtime.lastError);
+					showNotification('Ошибка', 'Не удалось сохранить группу.');
+				} else {
+					loadGroups(); // Перезагружаем список групп
+					showNotification(
+						'Группа Создана',
+						`Группа "${newGroup.name}" успешно создана.`
+					);
+					// Скрываем форму создания группы
+					const createGroupForm = document.getElementById('createGroupForm');
+					if (createGroupForm) {
+						createGroupForm.style.display = 'none';
+					}
+					resetCreateGroupForm();
+				}
+			});
 		});
 	}
 
-	// Функция для загрузки сессий
-	function loadSessions() {
-		console.log('Loading sessions');
-		// Загрузка автоматических сессий
-		chrome.storage.local.get(['autoSessions'], (result) => {
-			let autoSessions = result.autoSessions || [];
-			console.log(`Loaded autoSessions: ${autoSessions.length}`);
-			populateSessionList('autoSessions', autoSessions);
-		});
+	// Функция для сброса формы создания группы
+	function resetCreateGroupForm() {
+		const groupNameInput = document.getElementById('groupNameInput');
+		const customGroupUrlsContainer = document.getElementById(
+			'customGroupUrlsContainer'
+		);
+		const groupSessionOption = document.getElementById('groupSessionOption');
+		const groupCustomOption = document.getElementById('groupCustomOption');
 
-		// Загрузка сессий, сохранённых при изменении вкладок
-		chrome.storage.local.get(['changeSessions'], (result) => {
-			let changeSessions = result.changeSessions || [];
-			console.log(`Loaded changeSessions: ${changeSessions.length}`);
-			populateSessionList('changeSessions', changeSessions);
-		});
+		if (groupNameInput) groupNameInput.value = '';
+		if (customGroupUrlsContainer) {
+			customGroupUrlsContainer.innerHTML = '';
+			addCustomGroupUrlInput(); // Добавляем первоначальное поле ввода
+		}
+		if (groupSessionOption) groupSessionOption.checked = true;
+		if (groupCustomOption) groupCustomOption.checked = false;
+		updateGroupType();
 	}
 
-	// Функция для заполнения списка сессий
-	function populateSessionList(elementId, sessions) {
-		const sessionList = document.getElementById(elementId);
-		if (!sessionList) {
-			console.error(`Element with id "${elementId}" not found.`);
-			return;
-		}
-		sessionList.innerHTML = `<h2>${
-			elementId === 'autoSessions'
-				? 'Автоматические Сессии'
-				: 'Сессии при Изменении Вкладок'
-		}</h2>`;
+	// Функция для добавления нового поля ввода ссылки в группе
+	function addCustomGroupUrlInput() {
+		const customGroupUrlsContainer = document.getElementById(
+			'customGroupUrlsContainer'
+		);
+		if (!customGroupUrlsContainer) return;
 
-		if (sessions.length === 0) {
-			sessionList.innerHTML += '<p>Нет доступных сессий</p>';
-			return;
-		}
+		const urlInputGroup = document.createElement('div');
+		urlInputGroup.className = 'url-input-group';
 
-		const fragment = document.createDocumentFragment();
+		const newInput = document.createElement('input');
+		newInput.type = 'url';
+		newInput.className = 'customGroupUrl';
+		newInput.placeholder = 'https://example.com';
+		newInput.required = true;
 
-		sessions.forEach((session, index) => {
-			const sessionItem = document.createElement('div');
-			sessionItem.className = 'session-item';
-			sessionItem.innerHTML = `
+		const removeBtn = document.createElement('button');
+		removeBtn.type = 'button';
+		removeBtn.className = 'button-small remove-url-btn';
+		removeBtn.textContent = '−'; // Минус для удаления
+
+		// Обработчик удаления поля ввода
+		removeBtn.addEventListener('click', () => {
+			customGroupUrlsContainer.removeChild(urlInputGroup);
+		});
+
+		urlInputGroup.appendChild(newInput);
+		urlInputGroup.appendChild(removeBtn);
+
+		customGroupUrlsContainer.appendChild(urlInputGroup);
+	}
+
+	// --- Функция для загрузки групп ---
+	function loadGroups() {
+		const customGroupsContainer = document.getElementById('customGroups');
+		if (!customGroupsContainer) return;
+
+		customGroupsContainer.innerHTML = '<h2>Пользовательские Группы</h2>';
+
+		chrome.storage.local.get(['groups'], (result) => {
+			const groups = result.groups || [];
+
+			if (groups.length === 0) {
+				customGroupsContainer.innerHTML += '<p>Нет доступных групп</p>';
+				return;
+			}
+
+			const fragment = document.createDocumentFragment();
+
+			groups.forEach((group, index) => {
+				const groupItem = document.createElement('div');
+				groupItem.className = 'session-item group-item'; // Добавляем класс group-item
+				groupItem.innerHTML = `
                 <div class="session-header">
-                    <span>${formatTimestamp(session.timestamp)}</span>
+                    <span>${escapeHtml(group.name)}</span>
                     <div>
-                        <button class="button-small view-btn" data-index="${index}" data-type="${elementId}">Просмотреть</button>
-                        <button class="button-small export-btn" data-index="${index}" data-type="${elementId}">Экспорт</button>
-                        <button class="button-small delete-btn" data-index="${index}" data-type="${elementId}">Удалить</button>
+                        <button class="button-small view-group-btn" data-index="${index}">Просмотреть</button>
+                        <button class="button-small delete-group-btn" data-index="${index}">Удалить</button>
                     </div>
                 </div>
                 <div class="session-details" style="display: none;"></div>
             `;
-			fragment.appendChild(sessionItem);
-		});
+				fragment.appendChild(groupItem);
+			});
 
-		sessionList.appendChild(fragment);
-	}
-
-	// Функция для форматирования временной метки
-	function formatTimestamp(timestamp) {
-		const date = new Date(timestamp);
-
-		if (isNaN(date.getTime())) {
-			console.error('Invalid date detected:', timestamp);
-			return 'Неверная дата';
-		}
-
-		return date.toLocaleString('ru-RU', {
-			timeZone: 'Europe/Moscow', // Updated timezone
-			day: '2-digit',
-			month: '2-digit',
-			year: 'numeric',
-			hour: '2-digit',
-			minute: '2-digit',
+			customGroupsContainer.appendChild(fragment);
 		});
 	}
 
-	// Присоединяем обработчики событий для элементов сессий
+	// --- Обработчик для групп ---
 	function attachSessionEventListeners() {
 		contentContainer.addEventListener('click', handleSessionClick);
 	}
 
-	// Обработчик кликов по элементам сессий
 	function handleSessionClick(e) {
+		// Существующий код для сессий
 		if (e.target.classList.contains('view-btn')) {
 			const sessionIndex = e.target.getAttribute('data-index');
 			const sessionType = e.target.getAttribute('data-type');
@@ -299,6 +443,345 @@ document.addEventListener('DOMContentLoaded', () => {
 			console.log(`Export session: Type=${sessionType}, Index=${sessionIndex}`);
 			exportSession(sessionIndex, sessionType);
 		}
+
+		// Обработчики для групп
+		if (e.target.classList.contains('view-group-btn')) {
+			const groupIndex = e.target.getAttribute('data-index');
+			console.log(`View group: Index=${groupIndex}`);
+			viewGroupDetails(groupIndex, e.target);
+		} else if (e.target.classList.contains('delete-group-btn')) {
+			const groupIndex = e.target.getAttribute('data-index');
+			console.log(`Delete group: Index=${groupIndex}`);
+			deleteGroup(groupIndex);
+		}
+	}
+
+	// Функция для загрузки сессий в выпадающий список при создании группы
+	function populateSessionsForGroupCreation() {
+		const sessionSelectForGroup = document.getElementById(
+			'sessionSelectForGroup'
+		);
+		if (!sessionSelectForGroup) return;
+
+		// Очищаем существующие опции
+		sessionSelectForGroup.innerHTML = '';
+
+		// Загружаем сессии из хранилища
+		chrome.storage.local.get(['autoSessions', 'changeSessions'], (result) => {
+			const autoSessions = result.autoSessions || [];
+			const changeSessions = result.changeSessions || [];
+
+			const allSessions = [
+				...autoSessions.map((s, index) => ({
+					...s,
+					type: 'autoSessions',
+					index,
+				})),
+				...changeSessions.map((s, index) => ({
+					...s,
+					type: 'changeSessions',
+					index,
+				})),
+			];
+
+			allSessions.forEach((session) => {
+				const option = document.createElement('option');
+				option.value = `${session.type}_${session.index}`;
+				option.textContent = `${
+					session.type === 'autoSessions' ? 'Авто' : 'Изменение'
+				} - ${formatTimestamp(session.timestamp)}`;
+				sessionSelectForGroup.appendChild(option);
+			});
+		});
+	}
+
+	// Добавляем обработчики событий для групп в функции attachSessionEventListeners
+	function attachSessionEventListeners() {
+		contentContainer.addEventListener('click', handleSessionClick);
+	}
+
+	// Изменяем функцию handleSessionClick
+	function handleSessionClick(e) {
+		// Существующий код для сессий
+		if (e.target.classList.contains('view-btn')) {
+			const sessionIndex = e.target.getAttribute('data-index');
+			const sessionType = e.target.getAttribute('data-type');
+			console.log(`View session: Type=${sessionType}, Index=${sessionIndex}`);
+			viewSessionDetails(sessionIndex, sessionType, e.target);
+		} else if (e.target.classList.contains('restore-btn')) {
+			const windowIndex = e.target.getAttribute('data-window-index');
+			const sessionType = e.target.getAttribute('data-session-type');
+			const sessionIndex = e.target.getAttribute('data-session-index');
+			console.log(
+				`Restore window: Type=${sessionType}, SessionIndex=${sessionIndex}, WindowIndex=${windowIndex}`
+			);
+			restoreWindowFromSession(windowIndex, sessionType, sessionIndex);
+		} else if (e.target.classList.contains('toggle-tabs-btn')) {
+			const tabsContainer = e.target.nextElementSibling;
+			if (tabsContainer.style.display === 'block') {
+				tabsContainer.style.display = 'none';
+				e.target.textContent = 'Показать Вкладки';
+			} else {
+				tabsContainer.style.display = 'block';
+				e.target.textContent = 'Скрыть Вкладки';
+			}
+		} else if (e.target.classList.contains('delete-btn')) {
+			const sessionIndex = e.target.getAttribute('data-index');
+			const sessionType = e.target.getAttribute('data-type');
+			console.log(`Delete session: Type=${sessionType}, Index=${sessionIndex}`);
+			deleteSession(sessionIndex, sessionType);
+		} else if (e.target.classList.contains('export-btn')) {
+			const sessionIndex = e.target.getAttribute('data-index');
+			const sessionType = e.target.getAttribute('data-type');
+			console.log(`Export session: Type=${sessionType}, Index=${sessionIndex}`);
+			exportSession(sessionIndex, sessionType);
+		}
+
+		// Обработчики для групп
+		if (e.target.classList.contains('view-group-btn')) {
+			const groupIndex = e.target.getAttribute('data-index');
+			console.log(`View group: Index=${groupIndex}`);
+			viewGroupDetails(groupIndex, e.target);
+		} else if (e.target.classList.contains('delete-group-btn')) {
+			const groupIndex = e.target.getAttribute('data-index');
+			console.log(`Delete group: Index=${groupIndex}`);
+			deleteGroup(groupIndex);
+		}
+	}
+
+	// Функция для отображения деталей группы
+	function viewGroupDetails(groupIndex, button) {
+		chrome.storage.local.get(
+			['groups', 'autoSessions', 'changeSessions'],
+			(result) => {
+				const groups = result.groups || [];
+				const group = groups[groupIndex];
+
+				if (!group) {
+					console.error('Group not found:', groupIndex);
+					showNotification('Ошибка', 'Группа не найдена.');
+					return;
+				}
+
+				const detailsDiv =
+					button.parentElement.parentElement.nextElementSibling;
+				if (detailsDiv.style.display === 'block') {
+					detailsDiv.style.display = 'none';
+					button.textContent = 'Просмотреть';
+					detailsDiv.classList.remove('group-details'); // Удаляем класс при скрытии
+					return;
+				}
+
+				detailsDiv.innerHTML = ''; // Очищаем предыдущие детали
+
+				if (group.type === 'session') {
+					// Отображаем сессии в группе
+					const sessionList = document.createElement('ul');
+					group.sessions.forEach((sessionId) => {
+						const [sessionType, sessionIndex] = sessionId.split('_');
+						const sessions = result[sessionType] || [];
+						const session = sessions[sessionIndex];
+						const li = document.createElement('li');
+						if (session) {
+							li.textContent = `${
+								sessionType === 'autoSessions' ? 'Авто' : 'Изменение'
+							} - ${formatTimestamp(session.timestamp)}`;
+						} else {
+							li.textContent = 'Сессия не найдена';
+						}
+						sessionList.appendChild(li);
+					});
+					detailsDiv.appendChild(sessionList);
+				} else if (group.type === 'custom') {
+					// Отображаем кастомные ссылки
+					const linkList = document.createElement('ul');
+					group.customLinks.forEach((url) => {
+						const li = document.createElement('li');
+						li.innerHTML = `<a href="${url}" target="_blank">${url}</a>`;
+						linkList.appendChild(li);
+					});
+					detailsDiv.appendChild(linkList);
+				}
+
+				const restoreGroupButton = document.createElement('button');
+				restoreGroupButton.className = 'button restore-group-btn';
+				restoreGroupButton.textContent = 'Восстановить Группу';
+				restoreGroupButton.onclick = () => restoreGroup(group);
+
+				detailsDiv.appendChild(restoreGroupButton);
+
+				detailsDiv.classList.add('group-details'); // Добавляем класс
+				detailsDiv.style.display = 'block';
+				button.textContent = 'Скрыть';
+			}
+		);
+	}
+
+	// Функция для восстановления группы
+	function restoreGroup(group) {
+		if (group.type === 'session') {
+			// Восстанавливаем каждую сессию в группе
+			group.sessions.forEach((sessionId) => {
+				const [sessionType, sessionIndex] = sessionId.split('_');
+				restoreSessionByTypeAndIndex(sessionType, sessionIndex);
+			});
+		} else if (group.type === 'custom') {
+			// Открываем кастомные ссылки
+			openCustomUrls(group.customLinks);
+		}
+	}
+
+	// Функция для восстановления сессии по типу и индексу
+	function restoreSessionByTypeAndIndex(sessionType, sessionIndex) {
+		chrome.storage.local.get([sessionType], (result) => {
+			const sessions = result[sessionType] || [];
+			const session = sessions[sessionIndex];
+			if (session) {
+				// Восстанавливаем все окна в сессии
+				restoreAllWindows(session.windows);
+			} else {
+				console.error('Session not found:', sessionType, sessionIndex);
+				showNotification('Ошибка', 'Сессия не найдена.');
+			}
+		});
+	}
+
+	// Функция для открытия кастомных URL
+	function openCustomUrls(urls) {
+		console.log(`Opening custom URLs: ${urls.length}`);
+		urls.forEach((url) => {
+			chrome.tabs.create({ url, active: false }, (tab) => {
+				if (chrome.runtime.lastError) {
+					console.error('Error opening URL:', chrome.runtime.lastError);
+				}
+			});
+		});
+	}
+
+	// Функция для удаления группы
+	function deleteGroup(groupIndex) {
+		chrome.storage.local.get(['groups'], (result) => {
+			let groups = result.groups || [];
+			groups.splice(groupIndex, 1);
+			chrome.storage.local.set({ groups }, () => {
+				if (chrome.runtime.lastError) {
+					console.error('Error deleting group:', chrome.runtime.lastError);
+					showNotification('Ошибка', 'Не удалось удалить группу.');
+				} else {
+					loadGroups();
+					showNotification('Успех', 'Группа успешно удалена.');
+				}
+			});
+		});
+	}
+
+	// Функция для фильтрации сессий по запросу
+	function filterSessions(query) {
+		document.querySelectorAll('.session-item').forEach((item) => {
+			const sessionName = item
+				.querySelector('.session-header span')
+				.textContent.toLowerCase();
+			if (sessionName.includes(query)) {
+				item.style.display = 'flex'; // Используем 'flex', чтобы сохранить расположение
+			} else {
+				item.style.display = 'none';
+			}
+		});
+
+		// Также фильтруем группы (теперь они имеют классы сессий)
+		document.querySelectorAll('.session-item').forEach((item) => {
+			const sessionHeader = item.querySelector('.session-header span');
+			if (sessionHeader) {
+				const name = sessionHeader.textContent.toLowerCase();
+				if (name.includes(query)) {
+					item.style.display = 'flex';
+				} else {
+					item.style.display = 'none';
+				}
+			}
+		});
+	}
+
+	// --- Функции для вкладки "Сессии" ---
+	// Функция для загрузки сессий
+	function loadSessions() {
+		console.log('Loading sessions');
+		// Загрузка автоматических сессий
+		chrome.storage.local.get(['autoSessions'], (result) => {
+			let autoSessions = result.autoSessions || [];
+			console.log(`Loaded autoSessions: ${autoSessions.length}`);
+			populateSessionList('autoSessions', autoSessions);
+		});
+
+		// Загрузка сессий, сохранённых при изменении вкладок
+		chrome.storage.local.get(['changeSessions'], (result) => {
+			let changeSessions = result.changeSessions || [];
+			console.log(`Loaded changeSessions: ${changeSessions.length}`);
+			populateSessionList('changeSessions', changeSessions);
+		});
+
+		// После загрузки сессий, загружаем группы
+		loadGroups();
+		populateSessionsForGroupCreation();
+	}
+
+	// Функция для заполнения списка сессий
+	function populateSessionList(elementId, sessions) {
+		const sessionList = document.getElementById(elementId);
+		if (!sessionList) {
+			console.error(`Element with id "${elementId}" not found.`);
+			return;
+		}
+		sessionList.innerHTML = `<h2>${
+			elementId === 'autoSessions'
+				? 'Автоматические Сессии'
+				: 'Сессии при Изменении Вкладок'
+		}</h2>`;
+
+		if (sessions.length === 0) {
+			sessionList.innerHTML += '<p>Нет доступных сессий</p>';
+			return;
+		}
+
+		const fragment = document.createDocumentFragment();
+
+		sessions.forEach((session, index) => {
+			const sessionItem = document.createElement('div');
+			sessionItem.className = 'session-item';
+			sessionItem.innerHTML = `
+                    <div class="session-header">
+                        <span>${formatTimestamp(session.timestamp)}</span>
+                        <div>
+                            <button class="button-small view-btn" data-index="${index}" data-type="${elementId}">Просмотреть</button>
+                            <button class="button-small export-btn" data-index="${index}" data-type="${elementId}">Экспорт</button>
+                            <button class="button-small delete-btn" data-index="${index}" data-type="${elementId}">Удалить</button>
+                        </div>
+                    </div>
+                    <div class="session-details" style="display: none;"></div>
+                `;
+			fragment.appendChild(sessionItem);
+		});
+
+		sessionList.appendChild(fragment);
+	}
+
+	// Функция для форматирования временной метки
+	function formatTimestamp(timestamp) {
+		const date = new Date(timestamp);
+
+		if (isNaN(date.getTime())) {
+			console.error('Invalid date detected:', timestamp);
+			return 'Неверная дата';
+		}
+
+		return date.toLocaleString('ru-RU', {
+			timeZone: 'Europe/Moscow', // Обновлённая временная зона
+			day: '2-digit',
+			month: '2-digit',
+			year: 'numeric',
+			hour: '2-digit',
+			minute: '2-digit',
+		});
 	}
 
 	// Функция для отображения деталей сессии
@@ -329,24 +812,24 @@ document.addEventListener('DOMContentLoaded', () => {
 				const windowItem = document.createElement('div');
 				windowItem.className = 'window-item';
 				windowItem.innerHTML = `
-                    <p>Окно ${index + 1} (${window.tabs.length} вкладок)</p>
-                    <button class="button-small toggle-tabs-btn">Показать Вкладки</button>
-                    <div class="tabs-container" style="display: none;">
-                        <ul>
-                            ${window.tabs
-															.map(
-																(tab) =>
-																	`<li><a href="${
-																		tab.url
-																	}" target="_blank" title="${escapeHtml(
-																		tab.title
-																	)}">${escapeHtml(tab.title)}</a></li>`
-															)
-															.join('')}
-                        </ul>
-                        <button class="button-small restore-btn" data-window-index="${index}" data-session-type="${sessionType}" data-session-index="${sessionIndex}">Восстановить Это Окно</button>
-                    </div>
-                `;
+                        <p>Окно ${index + 1} (${window.tabs.length} вкладок)</p>
+                        <button class="button-small toggle-tabs-btn">Показать Вкладки</button>
+                        <div class="tabs-container" style="display: none;">
+                            <ul>
+                                ${window.tabs
+																	.map(
+																		(tab) =>
+																			`<li><a href="${
+																				tab.url
+																			}" target="_blank" title="${escapeHtml(
+																				tab.title
+																			)}">${escapeHtml(tab.title)}</a></li>`
+																	)
+																	.join('')}
+                            </ul>
+                            <button class="button-small restore-btn" data-window-index="${index}" data-session-type="${sessionType}" data-session-index="${sessionIndex}">Восстановить Это Окно</button>
+                        </div>
+                    `;
 				detailsDiv.appendChild(windowItem);
 			});
 
@@ -354,6 +837,7 @@ document.addEventListener('DOMContentLoaded', () => {
 			restoreAllButton.className = 'button';
 			restoreAllButton.textContent = 'Восстановить Все Окна';
 			restoreAllButton.onclick = () => restoreAllWindows(session.windows);
+
 			detailsDiv.appendChild(restoreAllButton);
 
 			detailsDiv.style.display = 'block';
@@ -1127,7 +1611,7 @@ document.addEventListener('DOMContentLoaded', () => {
 									);
 									showNotification(
 										'Ошибка Импорта',
-										'Не удалось импортировать сессии.'
+										'Не удалось импортировать сессию.'
 									);
 								} else {
 									loadTab('sessions'); // Перезагружаем вкладку "Сессии"

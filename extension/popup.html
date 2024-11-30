@@ -57,6 +57,76 @@
 									Создать Группу
 								</button>
 							</div>
+
+							<!-- Форма для создания группы -->
+							<div id="createGroupForm" style="display: none">
+								<label for="groupNameInput">Название группы:</label>
+								<input
+									type="text"
+									id="groupNameInput"
+									placeholder="Введите название группы"
+								/>
+
+								<div class="group-option">
+									<label>
+										<input
+											type="radio"
+											name="groupType"
+											value="session"
+											id="groupSessionOption"
+											checked
+										/>
+										Добавить существующие сессии
+									</label>
+									<label>
+										<input
+											type="radio"
+											name="groupType"
+											value="custom"
+											id="groupCustomOption"
+										/>
+										Ввести свои ссылки
+									</label>
+								</div>
+
+								<!-- Опции для добавления существующих сессий -->
+								<div id="sessionGroupOptions">
+									<label for="sessionSelectForGroup"
+										>Выберите сессии для добавления в группу:</label
+									>
+									<select id="sessionSelectForGroup" multiple>
+										<!-- Опции будут заполнены динамически -->
+									</select>
+								</div>
+
+								<!-- Опции для ввода своих ссылок -->
+								<div id="customGroupOptions" style="display: none">
+									<label>Введите ссылки:</label>
+									<div id="customGroupUrlsContainer">
+										<div class="url-input-group">
+											<input
+												type="url"
+												class="customGroupUrl"
+												placeholder="https://example.com"
+												required
+											/>
+										</div>
+									</div>
+									<button
+										type="button"
+										id="addGroupUrlBtn"
+										class="button-small"
+									>
+										+
+									</button>
+								</div>
+
+								<button id="saveGroupBtn" class="button">
+									Сохранить Группу
+								</button>
+								<button id="cancelGroupBtn" class="button">Отмена</button>
+							</div>
+
 							<div class="sessions-container">
 								<div class="session-list" id="autoSessions">
 									<h3>Автоматические Сессии</h3>
@@ -65,6 +135,11 @@
 								<div class="session-list" id="changeSessions">
 									<h3>Сессии при Изменении Вкладок</h3>
 									<p>Нет доступных сессий</p>
+								</div>
+								<!-- Секция для пользовательских групп -->
+								<div class="session-list" id="customGroups">
+									<h3>Пользовательские Группы</h3>
+									<p>Нет доступных групп</p>
 								</div>
 							</div>
 							<div class="controls">
