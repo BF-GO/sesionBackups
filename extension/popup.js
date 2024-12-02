@@ -124,20 +124,11 @@ document.addEventListener('DOMContentLoaded', () => {
 		const createGroupForm = document.getElementById('createGroupForm');
 
 		if (saveBtn) {
+			// Обновлённый обработчик для saveBtn
 			saveBtn.addEventListener('click', () => {
 				console.log('Save button clicked');
-				chrome.runtime.sendMessage(
-					{ action: 'saveSessionManually' },
-					(response) => {
-						console.log('Received response:', response);
-						if (response && response.status === 'success') {
-							loadSessions();
-							showNotification('Успех', 'Сессия успешно сохранена.');
-						} else {
-							showNotification('Ошибка', 'Не удалось сохранить сессию.');
-						}
-					}
-				);
+				// Новый функционал для сохранения открытых окон
+				openSaveSessionDialog();
 			});
 		}
 
@@ -215,6 +206,206 @@ document.addEventListener('DOMContentLoaded', () => {
 		// Обработчики для элементов сессий и групп
 		attachSessionEventListeners();
 	}
+
+	// --- Реализация функции openSaveSessionDialog() ---
+	function openSaveSessionDialog() {
+		// Получаем список всех открытых окон и вкладок
+		chrome.windows.getAll({ populate: true }, (windows) => {
+			// Создаём диалоговое окно для выбора окон
+			const dialog = document.createElement('div');
+			dialog.className = 'save-session-dialog';
+
+			dialog.innerHTML = `
+                <div class="dialog-content">
+                    <h2>Сохранить Сессию</h2>
+                    <label for="sessionNameInput">Название сессии:</label>
+                    <input type="text" id="sessionNameInput" placeholder="Введите название сессии" />
+
+                    <p>Выберите окна для сохранения:</p>
+                    <div id="windowSelectionContainer">
+                        ${windows
+													.map(
+														(window, index) => `
+                            <label>
+                                <input type="checkbox" class="window-checkbox" value="${
+																	window.id
+																}" checked />
+                                Окно ${index + 1} (${
+															window.tabs.length
+														} вкладок)
+                            </label>
+                        `
+													)
+													.join('')}
+                    </div>
+
+                    <button id="saveSessionConfirmBtn" class="button">Сохранить</button>
+                    <button id="cancelSessionBtn" class="button">Отмена</button>
+                </div>
+            `;
+
+			// Затемнение фона
+			const overlay = document.createElement('div');
+			overlay.className = 'dialog-overlay';
+			overlay.appendChild(dialog);
+			document.body.appendChild(overlay);
+
+			// Обработчики для кнопок диалога
+			document
+				.getElementById('saveSessionConfirmBtn')
+				.addEventListener('click', () => {
+					const sessionNameInput = document.getElementById('sessionNameInput');
+					const sessionName = sessionNameInput.value.trim();
+					if (!sessionName) {
+						alert('Пожалуйста, введите название сессии.');
+						return;
+					}
+
+					const selectedWindowIds = Array.from(
+						document.querySelectorAll('.window-checkbox:checked')
+					).map((checkbox) => parseInt(checkbox.value));
+
+					if (selectedWindowIds.length === 0) {
+						alert('Пожалуйста, выберите хотя бы одно окно для сохранения.');
+						return;
+					}
+
+					// Фильтруем выбранные окна
+					const selectedWindows = windows.filter((window) =>
+						selectedWindowIds.includes(window.id)
+					);
+
+					// Формируем объект сессии
+					const session = {
+						id: 'manual_' + Date.now(),
+						name: sessionName,
+						timestamp: Date.now(),
+						windows: selectedWindows.map((window) => ({
+							tabs: window.tabs.map((tab) => ({
+								title: tab.title,
+								url: tab.url,
+							})),
+						})),
+					};
+
+					// Сохраняем сессию
+					saveManualSession(session);
+
+					// Удаляем диалог
+					document.body.removeChild(overlay);
+				});
+
+			document
+				.getElementById('cancelSessionBtn')
+				.addEventListener('click', () => {
+					// Удаляем диалог
+					document.body.removeChild(overlay);
+				});
+		});
+	}
+
+	// --- Реализация функции saveManualSession(session) ---
+	function saveManualSession(session) {
+		chrome.storage.local.get(['manualSessions'], (result) => {
+			let manualSessions = result.manualSessions || [];
+			manualSessions.push(session);
+			// Ограничение до MAX_SESSIONS
+			if (manualSessions.length > MAX_SESSIONS) {
+				manualSessions = manualSessions.slice(
+					manualSessions.length - MAX_SESSIONS
+				);
+			}
+			chrome.storage.local.set({ manualSessions }, () => {
+				if (chrome.runtime.lastError) {
+					console.error(
+						'Error saving manual session:',
+						chrome.runtime.lastError
+					);
+					showNotification('Ошибка', 'Не удалось сохранить сессию.');
+				} else {
+					loadSessions();
+					showNotification('Успех', 'Сессия успешно сохранена.');
+				}
+			});
+		});
+	}
+
+	// --- Обновление функции loadSessions() ---
+	function loadSessions() {
+		console.log('Loading sessions');
+		// Загрузка ручных сессий
+		chrome.storage.local.get(['manualSessions'], (result) => {
+			let manualSessions = result.manualSessions || [];
+			console.log(`Loaded manualSessions: ${manualSessions.length}`);
+			populateSessionList('manualSessions', manualSessions);
+		});
+
+		// Загрузка автоматических сессий
+		chrome.storage.local.get(['autoSessions'], (result) => {
+			let autoSessions = result.autoSessions || [];
+			console.log(`Loaded autoSessions: ${autoSessions.length}`);
+			populateSessionList('autoSessions', autoSessions);
+		});
+
+		// Загрузка сессий, сохранённых при изменении вкладок
+		chrome.storage.local.get(['changeSessions'], (result) => {
+			let changeSessions = result.changeSessions || [];
+			console.log(`Loaded changeSessions: ${changeSessions.length}`);
+			populateSessionList('changeSessions', changeSessions);
+		});
+
+		// После загрузки сессий, загружаем группы
+		loadGroups();
+		populateSessionsForGroupCreation();
+	}
+
+	// --- Обновление функции populateSessionList() ---
+	function populateSessionList(elementId, sessions) {
+		const sessionList = document.getElementById(elementId);
+		if (!sessionList) {
+			console.error(`Element with id "${elementId}" not found.`);
+			return;
+		}
+		sessionList.innerHTML = `<h2>${
+			elementId === 'autoSessions'
+				? 'Автоматические Сессии'
+				: elementId === 'changeSessions'
+				? 'Сессии при Изменении Вкладок'
+				: 'Ручные Сессии'
+		}</h2>`;
+
+		if (sessions.length === 0) {
+			sessionList.innerHTML += '<p>Нет доступных сессий</p>';
+			return;
+		}
+
+		const fragment = document.createDocumentFragment();
+
+		sessions.forEach((session, index) => {
+			const sessionItem = document.createElement('div');
+			sessionItem.className = 'session-item';
+			sessionItem.innerHTML = `
+                <div class="session-header">
+                    <span>${
+											session.name || formatTimestamp(session.timestamp)
+										}</span>
+                    <div>
+                        <button class="button-small view-btn" data-index="${index}" data-type="${elementId}">Просмотреть</button>
+                        <button class="button-small export-btn" data-index="${index}" data-type="${elementId}">Экспорт</button>
+                        <button class="button-small delete-btn" data-index="${index}" data-type="${elementId}">Удалить</button>
+                    </div>
+                </div>
+                <div class="session-details" style="display: none;"></div>
+            `;
+			fragment.appendChild(sessionItem);
+		});
+
+		sessionList.appendChild(fragment);
+	}
+
+	// --- Остальной ваш код без изменений ---
+	// Функции для управления группами, планирования, настройки и другие функции остаются без изменений
+	// Ниже приведены все оставшиеся функции, адаптированные для поддержки manualSessions
 
 	// --- Функции для управления группами ---
 
@@ -387,15 +578,15 @@ document.addEventListener('DOMContentLoaded', () => {
 				const groupItem = document.createElement('div');
 				groupItem.className = 'session-item group-item'; // Добавляем класс group-item
 				groupItem.innerHTML = `
-                <div class="session-header">
-                    <span>${escapeHtml(group.name)}</span>
-                    <div>
-                        <button class="button-small view-group-btn" data-index="${index}">Просмотреть</button>
-                        <button class="button-small delete-group-btn" data-index="${index}">Удалить</button>
+                    <div class="session-header">
+                        <span>${escapeHtml(group.name)}</span>
+                        <div>
+                            <button class="button-small view-group-btn" data-index="${index}">Просмотреть</button>
+                            <button class="button-small delete-group-btn" data-index="${index}">Удалить</button>
+                        </div>
                     </div>
-                </div>
-                <div class="session-details" style="display: none;"></div>
-            `;
+                    <div class="session-details" style="display: none;"></div>
+                `;
 				fragment.appendChild(groupItem);
 			});
 
@@ -467,92 +658,57 @@ document.addEventListener('DOMContentLoaded', () => {
 		sessionSelectForGroup.innerHTML = '';
 
 		// Загружаем сессии из хранилища
-		chrome.storage.local.get(['autoSessions', 'changeSessions'], (result) => {
-			const autoSessions = result.autoSessions || [];
-			const changeSessions = result.changeSessions || [];
+		chrome.storage.local.get(
+			['autoSessions', 'changeSessions', 'manualSessions'],
+			(result) => {
+				const autoSessions = result.autoSessions || [];
+				const changeSessions = result.changeSessions || [];
+				const manualSessions = result.manualSessions || [];
 
-			const allSessions = [
-				...autoSessions.map((s, index) => ({
-					...s,
-					type: 'autoSessions',
-					index,
-				})),
-				...changeSessions.map((s, index) => ({
-					...s,
-					type: 'changeSessions',
-					index,
-				})),
-			];
+				const allSessions = [
+					...autoSessions.map((s, index) => ({
+						...s,
+						type: 'autoSessions',
+						index,
+					})),
+					...changeSessions.map((s, index) => ({
+						...s,
+						type: 'changeSessions',
+						index,
+					})),
+					...manualSessions.map((s, index) => ({
+						...s,
+						type: 'manualSessions',
+						index,
+					})),
+				];
 
-			allSessions.forEach((session) => {
-				const option = document.createElement('option');
-				option.value = `${session.type}_${session.index}`;
-				option.textContent = `${
-					session.type === 'autoSessions' ? 'Авто' : 'Изменение'
-				} - ${formatTimestamp(session.timestamp)}`;
-				sessionSelectForGroup.appendChild(option);
-			});
-		});
+				allSessions.forEach((session) => {
+					const option = document.createElement('option');
+					option.value = `${session.type}_${session.index}`;
+					option.textContent = `${
+						session.type === 'autoSessions'
+							? 'Авто'
+							: session.type === 'changeSessions'
+							? 'Изменение'
+							: 'Ручная'
+					} - ${formatTimestamp(session.timestamp)}`;
+					sessionSelectForGroup.appendChild(option);
+				});
+			}
+		);
 	}
 
 	// Добавляем обработчики событий для групп в функции attachSessionEventListeners
-	function attachSessionEventListeners() {
-		contentContainer.addEventListener('click', handleSessionClick);
-	}
+	// (Функция уже добавлена выше)
 
 	// Изменяем функцию handleSessionClick
-	function handleSessionClick(e) {
-		// Существующий код для сессий
-		if (e.target.classList.contains('view-btn')) {
-			const sessionIndex = e.target.getAttribute('data-index');
-			const sessionType = e.target.getAttribute('data-type');
-			console.log(`View session: Type=${sessionType}, Index=${sessionIndex}`);
-			viewSessionDetails(sessionIndex, sessionType, e.target);
-		} else if (e.target.classList.contains('restore-btn')) {
-			const windowIndex = e.target.getAttribute('data-window-index');
-			const sessionType = e.target.getAttribute('data-session-type');
-			const sessionIndex = e.target.getAttribute('data-session-index');
-			console.log(
-				`Restore window: Type=${sessionType}, SessionIndex=${sessionIndex}, WindowIndex=${windowIndex}`
-			);
-			restoreWindowFromSession(windowIndex, sessionType, sessionIndex);
-		} else if (e.target.classList.contains('toggle-tabs-btn')) {
-			const tabsContainer = e.target.nextElementSibling;
-			if (tabsContainer.style.display === 'block') {
-				tabsContainer.style.display = 'none';
-				e.target.textContent = 'Показать Вкладки';
-			} else {
-				tabsContainer.style.display = 'block';
-				e.target.textContent = 'Скрыть Вкладки';
-			}
-		} else if (e.target.classList.contains('delete-btn')) {
-			const sessionIndex = e.target.getAttribute('data-index');
-			const sessionType = e.target.getAttribute('data-type');
-			console.log(`Delete session: Type=${sessionType}, Index=${sessionIndex}`);
-			deleteSession(sessionIndex, sessionType);
-		} else if (e.target.classList.contains('export-btn')) {
-			const sessionIndex = e.target.getAttribute('data-index');
-			const sessionType = e.target.getAttribute('data-type');
-			console.log(`Export session: Type=${sessionType}, Index=${sessionIndex}`);
-			exportSession(sessionIndex, sessionType);
-		}
-
-		// Обработчики для групп
-		if (e.target.classList.contains('view-group-btn')) {
-			const groupIndex = e.target.getAttribute('data-index');
-			console.log(`View group: Index=${groupIndex}`);
-			viewGroupDetails(groupIndex, e.target);
-		} else if (e.target.classList.contains('delete-group-btn')) {
-			const groupIndex = e.target.getAttribute('data-index');
-			console.log(`Delete group: Index=${groupIndex}`);
-			deleteGroup(groupIndex);
-		}
-	}
+	// (Функция уже обновлена выше)
 
 	// Функция для отображения деталей группы
 	function viewGroupDetails(groupIndex, button) {
 		chrome.storage.local.get(
-			['groups', 'autoSessions', 'changeSessions'],
+			['groups', 'autoSessions', 'changeSessions', 'manualSessions'],
 			(result) => {
 				const groups = result.groups || [];
 				const group = groups[groupIndex];
@@ -584,7 +740,11 @@ document.addEventListener('DOMContentLoaded', () => {
 						const li = document.createElement('li');
 						if (session) {
 							li.textContent = `${
-								sessionType === 'autoSessions' ? 'Авто' : 'Изменение'
+								sessionType === 'autoSessions'
+									? 'Авто'
+									: sessionType === 'changeSessions'
+									? 'Изменение'
+									: 'Ручная'
 							} - ${formatTimestamp(session.timestamp)}`;
 						} else {
 							li.textContent = 'Сессия не найдена';
@@ -597,7 +757,9 @@ document.addEventListener('DOMContentLoaded', () => {
 					const linkList = document.createElement('ul');
 					group.customLinks.forEach((url) => {
 						const li = document.createElement('li');
-						li.innerHTML = `<a href="${url}" target="_blank">${url}</a>`;
+						li.innerHTML = `<a href="${url}" target="_blank">${escapeHtml(
+							url
+						)}</a>`;
 						linkList.appendChild(li);
 					});
 					detailsDiv.appendChild(linkList);
@@ -706,6 +868,13 @@ document.addEventListener('DOMContentLoaded', () => {
 	// Функция для загрузки сессий
 	function loadSessions() {
 		console.log('Loading sessions');
+		// Загрузка ручных сессий
+		chrome.storage.local.get(['manualSessions'], (result) => {
+			let manualSessions = result.manualSessions || [];
+			console.log(`Loaded manualSessions: ${manualSessions.length}`);
+			populateSessionList('manualSessions', manualSessions);
+		});
+
 		// Загрузка автоматических сессий
 		chrome.storage.local.get(['autoSessions'], (result) => {
 			let autoSessions = result.autoSessions || [];
@@ -735,7 +904,9 @@ document.addEventListener('DOMContentLoaded', () => {
 		sessionList.innerHTML = `<h2>${
 			elementId === 'autoSessions'
 				? 'Автоматические Сессии'
-				: 'Сессии при Изменении Вкладок'
+				: elementId === 'changeSessions'
+				? 'Сессии при Изменении Вкладок'
+				: 'Ручные Сессии'
 		}</h2>`;
 
 		if (sessions.length === 0) {
@@ -750,7 +921,9 @@ document.addEventListener('DOMContentLoaded', () => {
 			sessionItem.className = 'session-item';
 			sessionItem.innerHTML = `
                     <div class="session-header">
-                        <span>${formatTimestamp(session.timestamp)}</span>
+                        <span>${
+													session.name || formatTimestamp(session.timestamp)
+												}</span>
                         <div>
                             <button class="button-small view-btn" data-index="${index}" data-type="${elementId}">Просмотреть</button>
                             <button class="button-small export-btn" data-index="${index}" data-type="${elementId}">Экспорт</button>
@@ -971,56 +1144,64 @@ document.addEventListener('DOMContentLoaded', () => {
 	function loadStatistics() {
 		console.log('Loading statistics');
 		// Пример загрузки статистики
-		chrome.storage.local.get(['autoSessions', 'changeSessions'], (result) => {
-			const autoSessions = result.autoSessions || [];
-			const changeSessions = result.changeSessions || [];
-			const allSessions = [...autoSessions, ...changeSessions];
-			const totalSessions = allSessions.length;
-			let totalTabs = 0;
-			const siteCount = {};
+		chrome.storage.local.get(
+			['autoSessions', 'changeSessions', 'manualSessions'],
+			(result) => {
+				const autoSessions = result.autoSessions || [];
+				const changeSessions = result.changeSessions || [];
+				const manualSessions = result.manualSessions || [];
+				const allSessions = [
+					...autoSessions,
+					...changeSessions,
+					...manualSessions,
+				];
+				const totalSessions = allSessions.length;
+				let totalTabs = 0;
+				const siteCount = {};
 
-			allSessions.forEach((session) => {
-				session.windows.forEach((window) => {
-					totalTabs += window.tabs.length;
-					window.tabs.forEach((tab) => {
-						try {
-							const host = new URL(tab.url).hostname;
-							siteCount[host] = (siteCount[host] || 0) + 1;
-						} catch (e) {
-							console.error('Invalid URL:', tab.url);
-						}
+				allSessions.forEach((session) => {
+					session.windows.forEach((window) => {
+						totalTabs += window.tabs.length;
+						window.tabs.forEach((tab) => {
+							try {
+								const host = new URL(tab.url).hostname;
+								siteCount[host] = (siteCount[host] || 0) + 1;
+							} catch (e) {
+								console.error('Invalid URL:', tab.url);
+							}
+						});
 					});
 				});
-			});
 
-			// Находим самый частый сайт
-			let mostFrequentSite = 'N/A';
-			let maxCount = 0;
-			for (const site in siteCount) {
-				if (siteCount[site] > maxCount) {
-					maxCount = siteCount[site];
-					mostFrequentSite = site;
+				// Находим самый частый сайт
+				let mostFrequentSite = 'N/A';
+				let maxCount = 0;
+				for (const site in siteCount) {
+					if (siteCount[site] > maxCount) {
+						maxCount = siteCount[site];
+						mostFrequentSite = site;
+					}
+				}
+
+				// Обновляем элементы на странице
+				const totalSessionsEl = document.getElementById('totalSessions');
+				const totalTabsEl = document.getElementById('totalTabs');
+				const mostFrequentSiteEl = document.getElementById('mostFrequentSite');
+
+				if (totalSessionsEl) {
+					totalSessionsEl.textContent = totalSessions;
+					console.log(`Total Sessions: ${totalSessions}`);
+				}
+				if (totalTabsEl) {
+					totalTabsEl.textContent = totalTabs;
+					console.log(`Total Tabs: ${totalTabs}`);
+				}
+				if (mostFrequentSiteEl) {
+					mostFrequentSiteEl.textContent = mostFrequentSite;
+					console.log(`Most Frequent Site: ${mostFrequentSite}`);
 				}
 			}
-
-			// Обновляем элементы на странице
-			const totalSessionsEl = document.getElementById('totalSessions');
-			const totalTabsEl = document.getElementById('totalTabs');
-			const mostFrequentSiteEl = document.getElementById('mostFrequentSite');
-
-			if (totalSessionsEl) {
-				totalSessionsEl.textContent = totalSessions;
-				console.log(`Total Sessions: ${totalSessions}`);
-			}
-			if (totalTabsEl) {
-				totalTabsEl.textContent = totalTabs;
-				console.log(`Total Tabs: ${totalTabs}`);
-			}
-			if (mostFrequentSiteEl) {
-				mostFrequentSiteEl.textContent = mostFrequentSite;
-				console.log(`Most Frequent Site: ${mostFrequentSite}`);
-			}
-		});
+		);
 	}
 
 	// --- Функции для вкладки "Планирование" ---
@@ -1311,33 +1492,46 @@ document.addEventListener('DOMContentLoaded', () => {
 	// Функция для загрузки сессий в выпадающий список
 	function loadSessionsForScheduling(sessionSelect) {
 		// Загрузка сессий из хранилища
-		chrome.storage.local.get(['autoSessions', 'changeSessions'], (result) => {
-			const autoSessions = result.autoSessions || [];
-			const changeSessions = result.changeSessions || [];
-			const allSessions = [
-				...autoSessions.map((s, index) => ({
-					...s,
-					type: 'autoSessions',
-					index,
-				})),
-				...changeSessions.map((s, index) => ({
-					...s,
-					type: 'changeSessions',
-					index,
-				})),
-			];
+		chrome.storage.local.get(
+			['autoSessions', 'changeSessions', 'manualSessions'],
+			(result) => {
+				const autoSessions = result.autoSessions || [];
+				const changeSessions = result.changeSessions || [];
+				const manualSessions = result.manualSessions || [];
+				const allSessions = [
+					...autoSessions.map((s, index) => ({
+						...s,
+						type: 'autoSessions',
+						index,
+					})),
+					...changeSessions.map((s, index) => ({
+						...s,
+						type: 'changeSessions',
+						index,
+					})),
+					...manualSessions.map((s, index) => ({
+						...s,
+						type: 'manualSessions',
+						index,
+					})),
+				];
 
-			sessionSelect.innerHTML = '';
+				sessionSelect.innerHTML = '';
 
-			allSessions.forEach((session) => {
-				const option = document.createElement('option');
-				option.value = `${session.type}_${session.index}`;
-				option.textContent = `${
-					session.type === 'autoSessions' ? 'Авто' : 'Изменение'
-				} - ${formatTimestamp(session.timestamp)}`;
-				sessionSelect.appendChild(option);
-			});
-		});
+				allSessions.forEach((session) => {
+					const option = document.createElement('option');
+					option.value = `${session.type}_${session.index}`;
+					option.textContent = `${
+						session.type === 'autoSessions'
+							? 'Авто'
+							: session.type === 'changeSessions'
+							? 'Изменение'
+							: 'Ручная'
+					} - ${formatTimestamp(session.timestamp)}`;
+					sessionSelect.appendChild(option);
+				});
+			}
+		);
 	}
 
 	// --- Функции для вкладки "Настройки" ---
@@ -1470,25 +1664,29 @@ document.addEventListener('DOMContentLoaded', () => {
 	// --- Функции для экспорта всех сессий ---
 	function exportSessions() {
 		console.log('Exporting all sessions');
-		chrome.storage.local.get(['autoSessions', 'changeSessions'], (result) => {
-			const data = {
-				autoSessions: result.autoSessions || [],
-				changeSessions: result.changeSessions || [],
-			};
+		chrome.storage.local.get(
+			['autoSessions', 'changeSessions', 'manualSessions'],
+			(result) => {
+				const data = {
+					autoSessions: result.autoSessions || [],
+					changeSessions: result.changeSessions || [],
+					manualSessions: result.manualSessions || [],
+				};
 
-			const jsonStr = JSON.stringify(data, null, 2);
-			const blob = new Blob([jsonStr], { type: 'application/json' });
-			const url = URL.createObjectURL(blob);
-			const downloadLink = document.createElement('a');
-			downloadLink.href = url;
-			const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-			downloadLink.download = `sessions_${timestamp}.json`;
-			document.body.appendChild(downloadLink);
-			downloadLink.click();
-			document.body.removeChild(downloadLink);
-			URL.revokeObjectURL(url);
-			showNotification('Экспорт', 'Все сессии успешно экспортированы.');
-		});
+				const jsonStr = JSON.stringify(data, null, 2);
+				const blob = new Blob([jsonStr], { type: 'application/json' });
+				const url = URL.createObjectURL(blob);
+				const downloadLink = document.createElement('a');
+				downloadLink.href = url;
+				const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+				downloadLink.download = `sessions_${timestamp}.json`;
+				document.body.appendChild(downloadLink);
+				downloadLink.click();
+				document.body.removeChild(downloadLink);
+				URL.revokeObjectURL(url);
+				showNotification('Экспорт', 'Все сессии успешно экспортированы.');
+			}
+		);
 	}
 
 	// --- Функция для отображения уведомлений ---
@@ -1555,17 +1753,20 @@ document.addEventListener('DOMContentLoaded', () => {
 					(!importedData.autoSessions ||
 						!Array.isArray(importedData.autoSessions)) &&
 					(!importedData.changeSessions ||
-						!Array.isArray(importedData.changeSessions))
+						!Array.isArray(importedData.changeSessions)) &&
+					(!importedData.manualSessions ||
+						!Array.isArray(importedData.manualSessions))
 				) {
 					throw new Error('Неверный формат данных сессий.');
 				}
 
 				// Объединение существующих сессий с импортированными
 				chrome.storage.local.get(
-					['autoSessions', 'changeSessions'],
+					['autoSessions', 'changeSessions', 'manualSessions'],
 					(result) => {
 						let existingAuto = result.autoSessions || [];
 						let existingChange = result.changeSessions || [];
+						let existingManual = result.manualSessions || [];
 
 						// Импортируем autoSessions, если они есть
 						if (
@@ -1598,10 +1799,28 @@ document.addEventListener('DOMContentLoaded', () => {
 							}
 						}
 
+						// Импортируем manualSessions, если они есть
+						if (
+							importedData.manualSessions &&
+							Array.isArray(importedData.manualSessions)
+						) {
+							existingManual = [
+								...existingManual,
+								...importedData.manualSessions,
+							];
+							// Ограничение до MAX_SESSIONS
+							if (existingManual.length > MAX_SESSIONS) {
+								existingManual = existingManual.slice(
+									existingManual.length - MAX_SESSIONS
+								);
+							}
+						}
+
 						chrome.storage.local.set(
 							{
 								autoSessions: existingAuto,
 								changeSessions: existingChange,
+								manualSessions: existingManual,
 							},
 							() => {
 								if (chrome.runtime.lastError) {
