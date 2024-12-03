@@ -1,5 +1,57 @@
 const MAX_SESSIONS = 5; // Максимальное количество сессий
 
+// --- Функция для обновления типа группы ---
+function updateGroupType() {
+	const groupSessionOption = document.getElementById('groupSessionOption');
+	const groupCustomOption = document.getElementById('groupCustomOption');
+	const sessionGroupOptions = document.getElementById('sessionGroupOptions');
+	const customGroupOptions = document.getElementById('customGroupOptions');
+
+	if (
+		groupSessionOption &&
+		groupCustomOption &&
+		sessionGroupOptions &&
+		customGroupOptions
+	) {
+		if (groupSessionOption.checked) {
+			sessionGroupOptions.style.display = 'block';
+			customGroupOptions.style.display = 'none';
+		} else if (groupCustomOption.checked) {
+			sessionGroupOptions.style.display = 'none';
+			customGroupOptions.style.display = 'block';
+		}
+	}
+}
+
+// --- Функция для обновления типа планировки ---
+function updateScheduleType() {
+	const scheduleSessionOption = document.getElementById(
+		'scheduleSessionOption'
+	);
+	const scheduleCustomOption = document.getElementById('scheduleCustomOption');
+	const sessionScheduleOptions = document.getElementById(
+		'sessionScheduleOptions'
+	);
+	const customScheduleOptions = document.getElementById(
+		'customScheduleOptions'
+	);
+
+	if (
+		scheduleSessionOption &&
+		scheduleCustomOption &&
+		sessionScheduleOptions &&
+		customScheduleOptions
+	) {
+		if (scheduleSessionOption.checked) {
+			sessionScheduleOptions.style.display = 'block';
+			customScheduleOptions.style.display = 'none';
+		} else if (scheduleCustomOption.checked) {
+			sessionScheduleOptions.style.display = 'none';
+			customScheduleOptions.style.display = 'block';
+		}
+	}
+}
+
 document.addEventListener('DOMContentLoaded', () => {
 	const contentContainer = document.getElementById('contentContainer');
 	const sessionsTabTemplate = document.getElementById('sessionsTabTemplate');
@@ -22,6 +74,15 @@ document.addEventListener('DOMContentLoaded', () => {
 			htmlElement.classList.remove('dark-theme');
 			const themeSwitch = document.getElementById('themeSwitch');
 			if (themeSwitch) themeSwitch.checked = false;
+		}
+	});
+
+	// Делегирование событий для кнопок "Назад"
+	document.addEventListener('click', (event) => {
+		const backButton = event.target.closest('.back-button');
+		if (backButton) {
+			console.log('Back button clicked');
+			loadTab('sessions');
 		}
 	});
 
@@ -65,7 +126,7 @@ document.addEventListener('DOMContentLoaded', () => {
 					contentContainer.appendChild(clone);
 					console.log('Loaded Statistics tab template');
 					attachStatisticsTabEventListeners();
-					loadStatistics(); // Загружаем статистику
+					loadStatistics();
 				} else {
 					console.error('statisticsTabTemplate not found');
 				}
@@ -76,7 +137,7 @@ document.addEventListener('DOMContentLoaded', () => {
 					const clone = scheduleTabTemplate.content.cloneNode(true);
 					contentContainer.appendChild(clone);
 					console.log('Loaded Schedule tab template');
-					attachScheduleTabEventListeners(); // Updated function
+					attachScheduleTabEventListeners();
 				} else {
 					console.error('scheduleTabTemplate not found');
 				}
@@ -124,19 +185,24 @@ document.addEventListener('DOMContentLoaded', () => {
 		const createGroupForm = document.getElementById('createGroupForm');
 
 		if (saveBtn) {
-			// Обновлённый обработчик для saveBtn
 			saveBtn.addEventListener('click', () => {
 				console.log('Save button clicked');
-				// Новый функционал для сохранения открытых окон
 				openSaveSessionDialog();
 			});
 		}
 
 		if (createGroupBtn && createGroupForm) {
 			createGroupBtn.addEventListener('click', () => {
-				console.log('Create Group button clicked');
-				createGroupForm.style.display = 'block';
-				resetCreateGroupForm();
+				if (createGroupForm.style.display === 'block') {
+					// Скрыть форму
+					createGroupForm.style.display = 'none';
+					console.log('Create Group form hidden');
+				} else {
+					// Показать форму и сбросить её
+					console.log('Create Group button clicked');
+					createGroupForm.style.display = 'block';
+					resetCreateGroupForm();
+				}
 			});
 		}
 
@@ -151,31 +217,10 @@ document.addEventListener('DOMContentLoaded', () => {
 		// Обработчики для переключения типа группы
 		const groupSessionOption = document.getElementById('groupSessionOption');
 		const groupCustomOption = document.getElementById('groupCustomOption');
-		const sessionGroupOptions = document.getElementById('sessionGroupOptions');
-		const customGroupOptions = document.getElementById('customGroupOptions');
-		const customGroupUrlsContainer = document.getElementById(
-			'customGroupUrlsContainer'
-		);
 
-		if (
-			groupSessionOption &&
-			groupCustomOption &&
-			sessionGroupOptions &&
-			customGroupOptions
-		) {
+		if (groupSessionOption && groupCustomOption) {
 			groupSessionOption.addEventListener('change', updateGroupType);
 			groupCustomOption.addEventListener('change', updateGroupType);
-		}
-
-		// Функция для обновления типа группы
-		function updateGroupType() {
-			if (groupSessionOption.checked) {
-				sessionGroupOptions.style.display = 'block';
-				customGroupOptions.style.display = 'none';
-			} else if (groupCustomOption.checked) {
-				sessionGroupOptions.style.display = 'none';
-				customGroupOptions.style.display = 'block';
-			}
 		}
 
 		// Инициализируем видимость элементов на основе выбранного типа группы
@@ -206,7 +251,6 @@ document.addEventListener('DOMContentLoaded', () => {
 		// Обработчики для элементов сессий и групп
 		attachSessionEventListeners();
 	}
-
 	// --- Реализация функции openSaveSessionDialog() ---
 	function openSaveSessionDialog() {
 		// Получаем список всех открытых окон и вкладок
@@ -330,7 +374,7 @@ document.addEventListener('DOMContentLoaded', () => {
 		});
 	}
 
-	// --- Обновление функции loadSessions() ---
+	// --- Функция для загрузки сессий ---
 	function loadSessions() {
 		console.log('Loading sessions');
 		// Загрузка ручных сессий
@@ -359,7 +403,7 @@ document.addEventListener('DOMContentLoaded', () => {
 		populateSessionsForGroupCreation();
 	}
 
-	// --- Обновление функции populateSessionList() ---
+	// --- Функция для заполнения списка сессий ---
 	function populateSessionList(elementId, sessions) {
 		const sessionList = document.getElementById(elementId);
 		if (!sessionList) {
@@ -699,12 +743,6 @@ document.addEventListener('DOMContentLoaded', () => {
 		);
 	}
 
-	// Добавляем обработчики событий для групп в функции attachSessionEventListeners
-	// (Функция уже добавлена выше)
-
-	// Изменяем функцию handleSessionClick
-	// (Функция уже обновлена выше)
-
 	// Функция для отображения деталей группы
 	function viewGroupDetails(groupIndex, button) {
 		chrome.storage.local.get(
@@ -920,18 +958,18 @@ document.addEventListener('DOMContentLoaded', () => {
 			const sessionItem = document.createElement('div');
 			sessionItem.className = 'session-item';
 			sessionItem.innerHTML = `
-                    <div class="session-header">
-                        <span>${
-													session.name || formatTimestamp(session.timestamp)
-												}</span>
-                        <div>
-                            <button class="button-small view-btn" data-index="${index}" data-type="${elementId}">Просмотреть</button>
-                            <button class="button-small export-btn" data-index="${index}" data-type="${elementId}">Экспорт</button>
-                            <button class="button-small delete-btn" data-index="${index}" data-type="${elementId}">Удалить</button>
-                        </div>
+                <div class="session-header">
+                    <span>${
+											session.name || formatTimestamp(session.timestamp)
+										}</span>
+                    <div>
+                        <button class="button-small view-btn" data-index="${index}" data-type="${elementId}">Просмотреть</button>
+                        <button class="button-small export-btn" data-index="${index}" data-type="${elementId}">Экспорт</button>
+                        <button class="button-small delete-btn" data-index="${index}" data-type="${elementId}">Удалить</button>
                     </div>
-                    <div class="session-details" style="display: none;"></div>
-                `;
+                </div>
+                <div class="session-details" style="display: none;"></div>
+            `;
 			fragment.appendChild(sessionItem);
 		});
 
@@ -1249,16 +1287,6 @@ document.addEventListener('DOMContentLoaded', () => {
 		scheduleSessionOption.addEventListener('change', updateScheduleType);
 		scheduleCustomOption.addEventListener('change', updateScheduleType);
 
-		function updateScheduleType() {
-			if (scheduleSessionOption.checked) {
-				sessionScheduleOptions.style.display = 'block';
-				customScheduleOptions.style.display = 'none';
-			} else if (scheduleCustomOption.checked) {
-				sessionScheduleOptions.style.display = 'none';
-				customScheduleOptions.style.display = 'block';
-			}
-		}
-
 		// Инициализируем видимость элементов на основе выбранного типа планировки
 		updateScheduleType();
 
@@ -1543,14 +1571,6 @@ document.addEventListener('DOMContentLoaded', () => {
 		const importBtn = document.getElementById('importBtn');
 		const importFileInput = document.getElementById('importFileInput');
 		const exportBtn = document.getElementById('exportBtn');
-
-		// Обработчик для кнопки возврата (если необходимо)
-		if (backBtn) {
-			backBtn.addEventListener('click', () => {
-				console.log('Back button clicked');
-				loadTab('sessions');
-			});
-		}
 
 		// Инициализируем значения настроек
 		initializeSettings(themeSwitch, notificationSwitch, intervalInput);
