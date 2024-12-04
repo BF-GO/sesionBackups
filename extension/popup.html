@@ -291,6 +291,57 @@
 								</div>
 								<h2>Настройки</h2>
 							</div>
+							<!-- Настройки Ручных Сессий -->
+							<div class="setting-item">
+								<h3>Настройки Ручных Сессий</h3>
+								<label>
+									<span>Включить Ручные Сессии:</span>
+									<input type="checkbox" id="manualSessionsEnabledSwitch" />
+								</label>
+								<label for="manualSessionsMaxInput"
+									>Максимум Ручных Сессий:</label
+								>
+								<input
+									type="number"
+									id="manualSessionsMaxInput"
+									min="0"
+									value="5"
+								/>
+							</div>
+
+							<!-- Настройки Автоматических Сессий -->
+							<div class="setting-item">
+								<h3>Настройки Автоматических Сессий</h3>
+								<label>
+									<span>Включить Авто Сессии:</span>
+									<input type="checkbox" id="autoSessionsEnabledSwitch" />
+								</label>
+								<label for="autoSessionsMaxInput">Максимум Авто Сессий:</label>
+								<input
+									type="number"
+									id="autoSessionsMaxInput"
+									min="0"
+									value="5"
+								/>
+							</div>
+
+							<!-- Настройки Сессий при Изменении Вкладок -->
+							<div class="setting-item">
+								<h3>Настройки Сессий при Изменении Вкладок</h3>
+								<label>
+									<span>Включить Сессии при Изменении:</span>
+									<input type="checkbox" id="changeSessionsEnabledSwitch" />
+								</label>
+								<label for="changeSessionsMaxInput"
+									>Максимум Сессий при Изменении:</label
+								>
+								<input
+									type="number"
+									id="changeSessionsMaxInput"
+									min="0"
+									value="5"
+								/>
+							</div>
 							<div class="settings-items">
 								<!-- Интервал Автобэкапа -->
 								<div class="setting-item">

@@ -1,5 +1,3 @@
-const MAX_SESSIONS = 5; // Максимальное количество сессий
-
 // --- Функция для обновления типа группы ---
 function updateGroupType() {
 	const groupSessionOption = document.getElementById('groupSessionOption');
@@ -350,28 +348,39 @@ document.addEventListener('DOMContentLoaded', () => {
 
 	// --- Реализация функции saveManualSession(session) ---
 	function saveManualSession(session) {
-		chrome.storage.local.get(['manualSessions'], (result) => {
-			let manualSessions = result.manualSessions || [];
-			manualSessions.push(session);
-			// Ограничение до MAX_SESSIONS
-			if (manualSessions.length > MAX_SESSIONS) {
-				manualSessions = manualSessions.slice(
-					manualSessions.length - MAX_SESSIONS
-				);
-			}
-			chrome.storage.local.set({ manualSessions }, () => {
-				if (chrome.runtime.lastError) {
-					console.error(
-						'Error saving manual session:',
-						chrome.runtime.lastError
-					);
-					showNotification('Ошибка', 'Не удалось сохранить сессию.');
-				} else {
-					loadSessions();
-					showNotification('Успех', 'Сессия успешно сохранена.');
+		chrome.storage.local.get(
+			['manualSessions', 'manualSessionsMax', 'manualSessionsEnabled'],
+			(result) => {
+				if (result.manualSessionsEnabled === false) {
+					console.log('Manual sessions are disabled.');
+					return;
 				}
-			});
-		});
+				let manualSessions = result.manualSessions || [];
+				manualSessions.push(session);
+				let manualSessionsMax = result.manualSessionsMax;
+				if (manualSessionsMax === undefined || manualSessionsMax < 0) {
+					manualSessionsMax = 5; // значение по умолчанию
+				}
+				// Ограничение до manualSessionsMax
+				if (manualSessions.length > manualSessionsMax) {
+					manualSessions = manualSessions.slice(
+						manualSessions.length - manualSessionsMax
+					);
+				}
+				chrome.storage.local.set({ manualSessions }, () => {
+					if (chrome.runtime.lastError) {
+						console.error(
+							'Error saving manual session:',
+							chrome.runtime.lastError
+						);
+						showNotification('Ошибка', 'Не удалось сохранить сессию.');
+					} else {
+						loadSessions();
+						showNotification('Успех', 'Сессия успешно сохранена.');
+					}
+				});
+			}
+		);
 	}
 
 	// --- Функция для загрузки сессий ---
