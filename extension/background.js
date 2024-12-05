@@ -41,47 +41,62 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 	}
 });
 
-// Функция для сохранения текущей сессии
+// Функция для сохранения текущей сессии (авто-сессия)
 async function saveSession() {
-	const windows = await chrome.windows.getAll({ populate: true });
-	const session = {
-		timestamp: new Date().toISOString(),
-		windows: windows.map((win) => ({
-			id: win.id,
-			focused: win.focused,
-			incognito: win.incognito,
-			state: win.state,
-			type: win.type,
-			tabs: win.tabs.map((tab) => ({
-				id: tab.id,
-				url: tab.url,
-				title: tab.title,
-				active: tab.active,
-				pinned: tab.pinned,
-			})),
-		})),
-	};
-
-	// Получаем существующие авто-сессии
-	chrome.storage.local.get(['autoSessions'], (result) => {
-		let autoSessions = result.autoSessions || [];
-		autoSessions.push(session);
-
-		// Ограничиваем количество сессий до MAX_SESSIONS
-		if (autoSessions.length > MAX_SESSIONS) {
-			autoSessions = autoSessions.slice(autoSessions.length - MAX_SESSIONS);
-		}
-
-		// Сохраняем обратно в хранилище
-		chrome.storage.local.set({ autoSessions }, () => {
-			if (chrome.runtime.lastError) {
-				console.error('Error saving session:', chrome.runtime.lastError);
-				throw new Error(chrome.runtime.lastError.message);
-			} else {
-				console.log('Session saved successfully.');
+	chrome.storage.local.get(
+		['autoSessionsEnabled', 'autoSessionsMax'],
+		async (settings) => {
+			if (settings.autoSessionsEnabled === false) {
+				console.log('Auto sessions are disabled.');
+				return;
 			}
-		});
-	});
+			const windows = await chrome.windows.getAll({ populate: true });
+			const session = {
+				timestamp: new Date().toISOString(),
+				windows: windows.map((win) => ({
+					id: win.id,
+					focused: win.focused,
+					incognito: win.incognito,
+					state: win.state,
+					type: win.type,
+					tabs: win.tabs.map((tab) => ({
+						id: tab.id,
+						url: tab.url,
+						title: tab.title,
+						active: tab.active,
+						pinned: tab.pinned,
+					})),
+				})),
+			};
+
+			// Получаем существующие авто-сессии
+			chrome.storage.local.get(['autoSessions'], (result) => {
+				let autoSessions = result.autoSessions || [];
+				autoSessions.push(session);
+
+				let autoSessionsMax = settings.autoSessionsMax;
+				if (autoSessionsMax === undefined || autoSessionsMax < 0) {
+					autoSessionsMax = 5; // Значение по умолчанию
+				}
+
+				// Ограничиваем количество сессий до autoSessionsMax
+				if (autoSessions.length > autoSessionsMax) {
+					autoSessions = autoSessions.slice(
+						autoSessions.length - autoSessionsMax
+					);
+				}
+
+				// Сохраняем обратно в хранилище
+				chrome.storage.local.set({ autoSessions }, () => {
+					if (chrome.runtime.lastError) {
+						console.error('Error saving session:', chrome.runtime.lastError);
+					} else {
+						console.log('Auto session saved successfully.');
+					}
+				});
+			});
+		}
+	);
 }
 
 // Функция для планирования сессии (используя API alarms)

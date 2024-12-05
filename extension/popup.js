@@ -1583,6 +1583,119 @@ document.addEventListener('DOMContentLoaded', () => {
 
 		// Инициализируем значения настроек
 		initializeSettings(themeSwitch, notificationSwitch, intervalInput);
+		// Настройки Ручных Сессий
+		const manualSessionsEnabledSwitch = document.getElementById(
+			'manualSessionsEnabledSwitch'
+		);
+		const manualSessionsMaxInput = document.getElementById(
+			'manualSessionsMaxInput'
+		);
+
+		if (manualSessionsEnabledSwitch) {
+			manualSessionsEnabledSwitch.addEventListener('change', () => {
+				const isEnabled = manualSessionsEnabledSwitch.checked;
+				chrome.storage.local.set({ manualSessionsEnabled: isEnabled }, () => {
+					console.log(`Manual sessions ${isEnabled ? 'enabled' : 'disabled'}`);
+					showNotification(
+						'Настройки Обновлены',
+						`Ручные сессии ${isEnabled ? 'включены' : 'отключены'}.`
+					);
+					loadSessions(); // Перезагружаем сессии, чтобы отразить изменения
+				});
+			});
+		}
+
+		if (manualSessionsMaxInput) {
+			manualSessionsMaxInput.addEventListener('change', () => {
+				let maxValue = parseInt(manualSessionsMaxInput.value, 10);
+				if (isNaN(maxValue) || maxValue < 0) {
+					maxValue = 0;
+				}
+				chrome.storage.local.set({ manualSessionsMax: maxValue }, () => {
+					console.log(`Manual sessions max set to: ${maxValue}`);
+					showNotification(
+						'Настройки Обновлены',
+						`Максимальное количество ручных сессий установлено на ${maxValue}.`
+					);
+				});
+			});
+		}
+
+		// Настройки Авто Сессий
+		const autoSessionsEnabledSwitch = document.getElementById(
+			'autoSessionsEnabledSwitch'
+		);
+		const autoSessionsMaxInput = document.getElementById(
+			'autoSessionsMaxInput'
+		);
+
+		if (autoSessionsEnabledSwitch) {
+			autoSessionsEnabledSwitch.addEventListener('change', () => {
+				const isEnabled = autoSessionsEnabledSwitch.checked;
+				chrome.storage.local.set({ autoSessionsEnabled: isEnabled }, () => {
+					console.log(`Auto sessions ${isEnabled ? 'enabled' : 'disabled'}`);
+					showNotification(
+						'Настройки Обновлены',
+						`Авто сессии ${isEnabled ? 'включены' : 'отключены'}.`
+					);
+					loadSessions();
+				});
+			});
+		}
+
+		if (autoSessionsMaxInput) {
+			autoSessionsMaxInput.addEventListener('change', () => {
+				let maxValue = parseInt(autoSessionsMaxInput.value, 10);
+				if (isNaN(maxValue) || maxValue < 0) {
+					maxValue = 0;
+				}
+				chrome.storage.local.set({ autoSessionsMax: maxValue }, () => {
+					console.log(`Auto sessions max set to: ${maxValue}`);
+					showNotification(
+						'Настройки Обновлены',
+						`Максимальное количество авто сессий установлено на ${maxValue}.`
+					);
+				});
+			});
+		}
+
+		// Настройки Сессий при Изменении Вкладок
+		const changeSessionsEnabledSwitch = document.getElementById(
+			'changeSessionsEnabledSwitch'
+		);
+		const changeSessionsMaxInput = document.getElementById(
+			'changeSessionsMaxInput'
+		);
+
+		if (changeSessionsEnabledSwitch) {
+			changeSessionsEnabledSwitch.addEventListener('change', () => {
+				const isEnabled = changeSessionsEnabledSwitch.checked;
+				chrome.storage.local.set({ changeSessionsEnabled: isEnabled }, () => {
+					console.log(`Change sessions ${isEnabled ? 'enabled' : 'disabled'}`);
+					showNotification(
+						'Настройки Обновлены',
+						`Сессии при изменении ${isEnabled ? 'включены' : 'отключены'}.`
+					);
+					loadSessions();
+				});
+			});
+		}
+
+		if (changeSessionsMaxInput) {
+			changeSessionsMaxInput.addEventListener('change', () => {
+				let maxValue = parseInt(changeSessionsMaxInput.value, 10);
+				if (isNaN(maxValue) || maxValue < 0) {
+					maxValue = 0;
+				}
+				chrome.storage.local.set({ changeSessionsMax: maxValue }, () => {
+					console.log(`Change sessions max set to: ${maxValue}`);
+					showNotification(
+						'Настройки Обновлены',
+						`Максимальное количество сессий при изменении установлено на ${maxValue}.`
+					);
+				});
+			});
+		}
 
 		// Обработчики для переключателей настроек
 		if (themeSwitch) {
@@ -1688,6 +1801,65 @@ document.addEventListener('DOMContentLoaded', () => {
 			if (intervalInput) intervalInput.value = interval;
 			console.log(`Initializing autoBackupInterval: ${interval}`);
 		});
+		// Настройки Ручных Сессий
+		const manualSessionsEnabledSwitch = document.getElementById(
+			'manualSessionsEnabledSwitch'
+		);
+		const manualSessionsMaxInput = document.getElementById(
+			'manualSessionsMaxInput'
+		);
+		chrome.storage.local.get(
+			['manualSessionsEnabled', 'manualSessionsMax'],
+			(result) => {
+				const manualSessionsEnabled = result.manualSessionsEnabled !== false;
+				if (manualSessionsEnabledSwitch)
+					manualSessionsEnabledSwitch.checked = manualSessionsEnabled;
+				const manualSessionsMax = result.manualSessionsMax;
+				if (manualSessionsMaxInput)
+					manualSessionsMaxInput.value =
+						manualSessionsMax !== undefined ? manualSessionsMax : 5;
+			}
+		);
+
+		// Настройки Авто Сессий
+		const autoSessionsEnabledSwitch = document.getElementById(
+			'autoSessionsEnabledSwitch'
+		);
+		const autoSessionsMaxInput = document.getElementById(
+			'autoSessionsMaxInput'
+		);
+		chrome.storage.local.get(
+			['autoSessionsEnabled', 'autoSessionsMax'],
+			(result) => {
+				const autoSessionsEnabled = result.autoSessionsEnabled !== false;
+				if (autoSessionsEnabledSwitch)
+					autoSessionsEnabledSwitch.checked = autoSessionsEnabled;
+				const autoSessionsMax = result.autoSessionsMax;
+				if (autoSessionsMaxInput)
+					autoSessionsMaxInput.value =
+						autoSessionsMax !== undefined ? autoSessionsMax : 5;
+			}
+		);
+
+		// Настройки Сессий при Изменении Вкладок
+		const changeSessionsEnabledSwitch = document.getElementById(
+			'changeSessionsEnabledSwitch'
+		);
+		const changeSessionsMaxInput = document.getElementById(
+			'changeSessionsMaxInput'
+		);
+		chrome.storage.local.get(
+			['changeSessionsEnabled', 'changeSessionsMax'],
+			(result) => {
+				const changeSessionsEnabled = result.changeSessionsEnabled !== false;
+				if (changeSessionsEnabledSwitch)
+					changeSessionsEnabledSwitch.checked = changeSessionsEnabled;
+				const changeSessionsMax = result.changeSessionsMax;
+				if (changeSessionsMaxInput)
+					changeSessionsMaxInput.value =
+						changeSessionsMax !== undefined ? changeSessionsMax : 5;
+			}
+		);
 	}
 
 	// --- Функции для экспорта всех сессий ---
