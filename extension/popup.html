@@ -110,6 +110,9 @@
 												placeholder="https://example.com"
 												required
 											/>
+											<button type="button" class="button-small remove-url-btn">
+												−
+											</button>
 										</div>
 									</div>
 									<button
@@ -209,12 +212,9 @@
 												name="scheduleType"
 												value="session"
 												id="scheduleSessionOption"
-												<!--
-												Добавлен
-												id
-												--
+												checked
 											/>
-											checked /> Выбрать сохранённую сессию
+											Выбрать сохранённую сессию
 										</label>
 										<label>
 											<input
@@ -222,18 +222,13 @@
 												name="scheduleType"
 												value="custom"
 												id="scheduleCustomOption"
-												<!--
-												Добавлен
-												id
-												--
 											/>
-											/> Ввести свои ссылки
+											Ввести свои ссылки
 										</label>
 									</div>
 
 									<!-- Выбор сохраненной сессии -->
 									<div id="sessionScheduleOptions">
-										<!-- Изменён ID -->
 										<label for="sessionSelect"
 											>Выберите сессию для восстановления:</label
 										>
@@ -244,7 +239,6 @@
 
 									<!-- Ввод своих ссылок -->
 									<div id="customScheduleOptions" style="display: none">
-										<!-- Изменён ID -->
 										<label>Введите ссылки:</label>
 										<div id="customUrlsContainer">
 											<div class="url-input-group">
@@ -254,6 +248,12 @@
 													placeholder="https://example.com"
 													required
 												/>
+												<button
+													type="button"
+													class="button-small remove-url-btn"
+												>
+													−
+												</button>
 											</div>
 										</div>
 										<button type="button" id="addUrlBtn" class="button-small">

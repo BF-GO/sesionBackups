@@ -5,9 +5,23 @@ const MAX_SESSIONS = 5; // Максимальное количество сес�
 // Функция для сохранения сессии
 async function saveSession(type = 'auto') {
 	try {
+		// Проверяем, включен ли тип сессий
+		const enabledKey = `${type}SessionsEnabled`; // Например, 'manualSessionsEnabled'
+		const result = await chrome.storage.local.get([enabledKey]);
+		const isEnabled = result[enabledKey] !== false; // По умолчанию true
+
+		if (!isEnabled) {
+			console.log(`Сохранение сессии типа "${type}" отключено.`);
+			return;
+		}
+
 		const windows = await chrome.windows.getAll({ populate: true });
 		const session = {
 			id: `${type}_${Date.now()}`, // Уникальный идентификатор с типом
+			name:
+				type === 'manual'
+					? 'Ручная Сессия'
+					: `${type.charAt(0).toUpperCase() + type.slice(1)} Сессия`,
 			timestamp: new Date().toISOString(),
 			windows: windows.map((win) => ({
 				id: win.id,
@@ -26,11 +40,16 @@ async function saveSession(type = 'auto') {
 		};
 
 		// Определяем ключ хранения на основе типа
-		const storageKey = type === 'auto' ? 'autoSessions' : 'changeSessions';
+		const storageKey =
+			type === 'auto'
+				? 'autoSessions'
+				: type === 'change'
+				? 'changeSessions'
+				: 'manualSessions';
 
 		// Получаем существующие сессии
-		const result = await chrome.storage.local.get([storageKey]);
-		let sessions = result[storageKey] || [];
+		const storageResult = await chrome.storage.local.get([storageKey]);
+		let sessions = storageResult[storageKey] || [];
 		sessions.push(session);
 
 		// Ограничиваем количество сессий до MAX_SESSIONS
@@ -40,10 +59,10 @@ async function saveSession(type = 'auto') {
 
 		// Сохраняем обратно в хранилище
 		await chrome.storage.local.set({ [storageKey]: sessions });
-		console.log(`Session saved successfully as ${type}.`);
+		console.log(`Сессия типа "${type}" успешно сохранена.`);
 		showNotification('Сессия Сохранена', `Сессия успешно сохранена (${type}).`);
 	} catch (error) {
-		console.error('Error saving session:', error);
+		console.error('Ошибка при сохранении сессии:', error);
 		showNotification('Ошибка', 'Не удалось сохранить сессию.');
 	}
 }
@@ -54,7 +73,9 @@ function setAutoBackupAlarm(intervalMinutes) {
 		chrome.alarms.create('autoBackup', {
 			periodInMinutes: intervalMinutes,
 		});
-		console.log(`Auto backup alarm set for every ${intervalMinutes} minutes.`);
+		console.log(
+			`Автоматическое резервное копирование установлено на каждые ${intervalMinutes} минут.`
+		);
 	});
 }
 
@@ -82,7 +103,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 				sendResponse({ status: 'success' });
 			})
 			.catch((error) => {
-				console.error('Error saving session:', error);
+				console.error('Ошибка при сохранении сессии:', error);
 				sendResponse({ status: 'failure', error: error.message });
 			});
 		return true; // Указывает на асинхронный ответ
@@ -92,7 +113,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 				sendResponse({ status: 'success' });
 			})
 			.catch((error) => {
-				console.error('Error scheduling session:', error);
+				console.error('Ошибка при планировании сессии:', error);
 				sendResponse({ status: 'failure', error: error.message });
 			});
 		return true;
@@ -106,7 +127,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 				}
 			})
 			.catch((error) => {
-				console.error('Error cancelling scheduled session:', error);
+				console.error('Ошибка при отмене запланированной сессии:', error);
 				sendResponse({ status: 'failure', error: error.message });
 			});
 		return true;
@@ -116,9 +137,21 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 // Функция для планирования сессии (используя API alarms)
 async function scheduleSession(scheduledSession) {
 	try {
+		// Проверяем, включен ли тип сессии
+		const enabledKey = `${scheduledSession.type}SessionsEnabled`;
+		const result = await chrome.storage.local.get([enabledKey]);
+		const isEnabled = result[enabledKey] !== false;
+
+		if (!isEnabled) {
+			console.log(
+				`Планирование сессии типа "${scheduledSession.type}" отключено.`
+			);
+			return;
+		}
+
 		// Сохраняем запланированную сессию в хранилище
-		const result = await chrome.storage.local.get(['scheduledSessions']);
-		let scheduledSessions = result.scheduledSessions || [];
+		const storageResult = await chrome.storage.local.get(['scheduledSessions']);
+		let scheduledSessions = storageResult.scheduledSessions || [];
 		scheduledSessions.push(scheduledSession);
 		await chrome.storage.local.set({ scheduledSessions });
 
@@ -126,9 +159,9 @@ async function scheduleSession(scheduledSession) {
 		chrome.alarms.create(scheduledSession.id, {
 			when: new Date(scheduledSession.time).getTime(),
 		});
-		console.log('Scheduled session saved and alarm set.');
+		console.log('Запланированная сессия сохранена и будильник установлен.');
 	} catch (error) {
-		console.error('Error scheduling session:', error);
+		console.error('Ошибка при планировании сессии:', error);
 		throw error;
 	}
 }
@@ -150,7 +183,7 @@ function cancelScheduledSession(scheduleId) {
 			chrome.storage.local.set({ scheduledSessions }, () => {
 				if (chrome.runtime.lastError) {
 					console.error(
-						'Error cancelling scheduled session:',
+						'Ошибка при отмене запланированной сессии:',
 						chrome.runtime.lastError
 					);
 					reject(new Error(chrome.runtime.lastError.message));
@@ -158,10 +191,10 @@ function cancelScheduledSession(scheduleId) {
 					// Очищаем будильник
 					chrome.alarms.clear(scheduleId, (wasCleared) => {
 						if (wasCleared) {
-							console.log('Scheduled session cancelled.');
+							console.log('Запланированная сессия отменена.');
 							resolve(true);
 						} else {
-							console.log('No such alarm to cancel.');
+							console.log('Будильник для запланированной сессии не найден.');
 							resolve(false);
 						}
 					});
@@ -174,10 +207,12 @@ function cancelScheduledSession(scheduleId) {
 // Listener для будильников
 chrome.alarms.onAlarm.addListener((alarm) => {
 	if (alarm.name === 'autoBackup') {
-		console.log('Auto backup alarm triggered.');
+		console.log(
+			'Срабатывание будильника автоматического резервного копирования.'
+		);
 		saveSession('auto');
 	} else {
-		console.log(`Alarm triggered: ${alarm.name}`);
+		console.log(`Будильник сработал: ${alarm.name}`);
 		handleScheduledSession(alarm.name);
 	}
 });
@@ -192,7 +227,8 @@ async function handleScheduledSession(alarmName) {
 		if (session) {
 			if (session.type === 'session') {
 				// Восстанавливаем сессию
-				await restoreSession(session.sessionId);
+				const [sessionType, sessionIndex] = session.sessionId.split('_');
+				await restoreSessionByTypeAndIndex(sessionType, sessionIndex);
 			} else if (session.type === 'custom') {
 				// Открываем пользовательские ссылки
 				await openCustomUrls(session.urls);
@@ -203,43 +239,21 @@ async function handleScheduledSession(alarmName) {
 				(s) => s.id !== alarmName
 			);
 			await chrome.storage.local.set({ scheduledSessions: updatedSessions });
-			console.log(`Scheduled session ${alarmName} executed and removed.`);
+			console.log(`Запланированная сессия "${alarmName}" выполнена и удалена.`);
 		} else {
-			console.error(`Scheduled session with ID ${alarmName} not found.`);
+			console.error(`Запланированная сессия с ID "${alarmName}" не найдена.`);
 		}
 	} catch (error) {
-		console.error('Error handling scheduled session:', error);
+		console.error('Ошибка при обработке запланированной сессии:', error);
 	}
 }
 
-// Функция для восстановления сессии по sessionId
-function restoreSession(sessionId) {
+// Функция для восстановления сессии по типу и индексу
+function restoreSessionByTypeAndIndex(sessionType, sessionIndex) {
 	return new Promise((resolve, reject) => {
-		chrome.storage.local.get(['autoSessions', 'changeSessions'], (result) => {
-			const { autoSessions = [], changeSessions = [] } = result;
-			let session = null;
-			let sessionType = '';
-			let sessionIndex = -1;
-
-			// Ищем сессию в autoSessions
-			autoSessions.forEach((s, index) => {
-				if (`autoSessions_${index}` === sessionId) {
-					session = s;
-					sessionType = 'autoSessions';
-					sessionIndex = index;
-				}
-			});
-
-			// Если не найдена, ищем в changeSessions
-			if (!session) {
-				changeSessions.forEach((s, index) => {
-					if (`changeSessions_${index}` === sessionId) {
-						session = s;
-						sessionType = 'changeSessions';
-						sessionIndex = index;
-					}
-				});
-			}
+		chrome.storage.local.get([sessionType], (result) => {
+			const sessions = result[sessionType] || [];
+			const session = sessions[sessionIndex];
 
 			if (session) {
 				// Восстанавливаем каждое окно
@@ -264,11 +278,13 @@ function restoreSession(sessionId) {
 						);
 					}
 				});
-				console.log(`Session ${sessionId} restored.`);
+				console.log(`Сессия "${session.id}" восстановлена.`);
 				resolve();
 			} else {
-				console.error(`Session with ID ${sessionId} not found.`);
-				reject(new Error('Session not found.'));
+				console.error(
+					`Сессия с ID "${sessionType}_${sessionIndex}" не найдена.`
+				);
+				reject(new Error('Сессия не найдена.'));
 			}
 		});
 	});
@@ -292,11 +308,11 @@ function openCustomUrls(urls) {
 						index: index + 1,
 					});
 				});
-				console.log(`Opened custom URLs in new window.`);
+				console.log(`Пользовательские URL-адреса открыты в новом окне.`);
 				resolve();
 			} else {
-				console.error('Failed to create window for custom URLs.');
-				reject(new Error('Failed to create window.'));
+				console.error('Не удалось создать окно для пользовательских URL.');
+				reject(new Error('Не удалось создать окно.'));
 			}
 		});
 	});
@@ -338,14 +354,14 @@ function showNotification(title, message) {
 					},
 					(notificationId) => {
 						if (chrome.runtime.lastError) {
-							console.error('Notification Error:', chrome.runtime.lastError);
+							console.error('Ошибка уведомления:', chrome.runtime.lastError);
 						} else {
-							console.log('Notification shown with ID:', notificationId);
+							console.log('Уведомление показано с ID:', notificationId);
 						}
 					}
 				);
 			} else {
-				// Fallback для браузеров без API уведомлений
+				// Резервный вариант для браузеров без API уведомлений
 				alert(`${title}: ${message}`);
 			}
 		}

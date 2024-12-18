@@ -1,55 +1,4 @@
-// --- Функция для обновления типа группы ---
-function updateGroupType() {
-	const groupSessionOption = document.getElementById('groupSessionOption');
-	const groupCustomOption = document.getElementById('groupCustomOption');
-	const sessionGroupOptions = document.getElementById('sessionGroupOptions');
-	const customGroupOptions = document.getElementById('customGroupOptions');
-
-	if (
-		groupSessionOption &&
-		groupCustomOption &&
-		sessionGroupOptions &&
-		customGroupOptions
-	) {
-		if (groupSessionOption.checked) {
-			sessionGroupOptions.style.display = 'block';
-			customGroupOptions.style.display = 'none';
-		} else if (groupCustomOption.checked) {
-			sessionGroupOptions.style.display = 'none';
-			customGroupOptions.style.display = 'block';
-		}
-	}
-}
-
-// --- Функция для обновления типа планировки ---
-function updateScheduleType() {
-	const scheduleSessionOption = document.getElementById(
-		'scheduleSessionOption'
-	);
-	const scheduleCustomOption = document.getElementById('scheduleCustomOption');
-	const sessionScheduleOptions = document.getElementById(
-		'sessionScheduleOptions'
-	);
-	const customScheduleOptions = document.getElementById(
-		'customScheduleOptions'
-	);
-
-	if (
-		scheduleSessionOption &&
-		scheduleCustomOption &&
-		sessionScheduleOptions &&
-		customScheduleOptions
-	) {
-		if (scheduleSessionOption.checked) {
-			sessionScheduleOptions.style.display = 'block';
-			customScheduleOptions.style.display = 'none';
-		} else if (scheduleCustomOption.checked) {
-			sessionScheduleOptions.style.display = 'none';
-			customScheduleOptions.style.display = 'block';
-		}
-	}
-}
-
+// --- Обработчик события загрузки DOM ---
 document.addEventListener('DOMContentLoaded', () => {
 	const contentContainer = document.getElementById('contentContainer');
 	const sessionsTabTemplate = document.getElementById('sessionsTabTemplate');
@@ -84,7 +33,7 @@ document.addEventListener('DOMContentLoaded', () => {
 		}
 	});
 
-	// Функция для загрузки содержимого вкладки
+	// --- Функция для загрузки содержимого вкладки ---
 	function loadTab(tabName) {
 		console.log(`Loading tab: ${tabName}`);
 		// Убираем активные классы у всех кнопок вкладок
@@ -104,23 +53,23 @@ document.addEventListener('DOMContentLoaded', () => {
 		if (activeTabButton) activeTabButton.classList.add('active');
 
 		// Загрузка соответствующего шаблона
+		contentContainer.innerHTML = ''; // Очищаем контейнер перед загрузкой новой вкладки
+		let clone;
 		switch (tabName) {
 			case 'sessions':
-				contentContainer.innerHTML = '';
 				if (sessionsTabTemplate) {
-					const clone = sessionsTabTemplate.content.cloneNode(true);
+					clone = sessionsTabTemplate.content.cloneNode(true);
 					contentContainer.appendChild(clone);
 					console.log('Loaded Sessions tab template');
 					attachSessionsTabEventListeners();
-					loadSessions();
+					loadSessions(); // Вызов функции загрузки сессий
 				} else {
 					console.error('sessionsTabTemplate not found');
 				}
 				break;
 			case 'statistics':
-				contentContainer.innerHTML = '';
 				if (statisticsTabTemplate) {
-					const clone = statisticsTabTemplate.content.cloneNode(true);
+					clone = statisticsTabTemplate.content.cloneNode(true);
 					contentContainer.appendChild(clone);
 					console.log('Loaded Statistics tab template');
 					attachStatisticsTabEventListeners();
@@ -130,9 +79,8 @@ document.addEventListener('DOMContentLoaded', () => {
 				}
 				break;
 			case 'schedule':
-				contentContainer.innerHTML = '';
 				if (scheduleTabTemplate) {
-					const clone = scheduleTabTemplate.content.cloneNode(true);
+					clone = scheduleTabTemplate.content.cloneNode(true);
 					contentContainer.appendChild(clone);
 					console.log('Loaded Schedule tab template');
 					attachScheduleTabEventListeners();
@@ -141,12 +89,11 @@ document.addEventListener('DOMContentLoaded', () => {
 				}
 				break;
 			case 'settings':
-				contentContainer.innerHTML = '';
 				if (settingsTabTemplate) {
-					const clone = settingsTabTemplate.content.cloneNode(true);
+					clone = settingsTabTemplate.content.cloneNode(true);
 					contentContainer.appendChild(clone);
 					console.log('Loaded Settings tab template');
-					attachSettingsTabEventListeners();
+					attachSettingsTabEventListeners(); // Обновленная функция обработчиков настроек
 				} else {
 					console.error('settingsTabTemplate not found');
 				}
@@ -175,257 +122,557 @@ document.addEventListener('DOMContentLoaded', () => {
 	// Функция для загрузки основной вкладки при запуске
 	loadTab('sessions');
 
-	// --- Обновлённая функция для вкладки "Сессии" ---
-	function attachSessionsTabEventListeners() {
-		const saveBtn = document.getElementById('saveBtn');
-		const createGroupBtn = document.getElementById('createGroupBtn');
-		const searchInput = document.getElementById('searchInput');
-		const createGroupForm = document.getElementById('createGroupForm');
+	// --- Функция для вкладки "Настройки" ---
+	function attachSettingsTabEventListeners() {
+		const themeSwitch = document.getElementById('themeSwitch');
+		const notificationSwitch = document.getElementById('notificationSwitch');
+		const intervalInput = document.getElementById('intervalInput');
+		const importBtn = document.getElementById('importBtn');
+		const importFileInput = document.getElementById('importFileInput');
+		const exportBtn = document.getElementById('exportBtn');
 
-		if (saveBtn) {
-			saveBtn.addEventListener('click', () => {
-				console.log('Save button clicked');
-				openSaveSessionDialog();
+		// Обработчики переключателей Ручных Сессий
+		const manualSessionsEnabledSwitch = document.getElementById(
+			'manualSessionsEnabledSwitch'
+		);
+		const manualSessionsMaxInput = document.getElementById(
+			'manualSessionsMaxInput'
+		);
+
+		if (manualSessionsEnabledSwitch) {
+			manualSessionsEnabledSwitch.addEventListener('change', () => {
+				const isEnabled = manualSessionsEnabledSwitch.checked;
+				chrome.storage.local.set({ manualSessionsEnabled: isEnabled }, () => {
+					console.log(`Manual sessions ${isEnabled ? 'enabled' : 'disabled'}`);
+					showNotification(
+						'Настройки Обновлены',
+						`Ручные сессии ${isEnabled ? 'включены' : 'отключены'}.`
+					);
+					loadSessions(); // Перезагружаем сессии, чтобы отразить изменения
+				});
 			});
 		}
 
-		if (createGroupBtn && createGroupForm) {
-			createGroupBtn.addEventListener('click', () => {
-				if (createGroupForm.style.display === 'block') {
-					// Скрыть форму
-					createGroupForm.style.display = 'none';
-					console.log('Create Group form hidden');
+		if (manualSessionsMaxInput) {
+			manualSessionsMaxInput.addEventListener('change', () => {
+				let maxValue = parseInt(manualSessionsMaxInput.value, 10);
+				if (isNaN(maxValue) || maxValue < 0) {
+					maxValue = 0;
+				}
+				chrome.storage.local.set({ manualSessionsMax: maxValue }, () => {
+					console.log(`Manual sessions max set to: ${maxValue}`);
+					showNotification(
+						'Настройки Обновлены',
+						`Максимальное количество ручных сессий установлено на ${maxValue}.`
+					);
+				});
+			});
+		}
+
+		// Обработчики переключателей Авто Сессий
+		const autoSessionsEnabledSwitch = document.getElementById(
+			'autoSessionsEnabledSwitch'
+		);
+		const autoSessionsMaxInput = document.getElementById(
+			'autoSessionsMaxInput'
+		);
+
+		if (autoSessionsEnabledSwitch) {
+			autoSessionsEnabledSwitch.addEventListener('change', () => {
+				const isEnabled = autoSessionsEnabledSwitch.checked;
+				chrome.storage.local.set({ autoSessionsEnabled: isEnabled }, () => {
+					console.log(`Auto sessions ${isEnabled ? 'enabled' : 'disabled'}`);
+					showNotification(
+						'Настройки Обновлены',
+						`Авто сессии ${isEnabled ? 'включены' : 'отключены'}.`
+					);
+					loadSessions(); // Перезагружаем сессии, чтобы отразить изменения
+				});
+			});
+		}
+
+		if (autoSessionsMaxInput) {
+			autoSessionsMaxInput.addEventListener('change', () => {
+				let maxValue = parseInt(autoSessionsMaxInput.value, 10);
+				if (isNaN(maxValue) || maxValue < 0) {
+					maxValue = 0;
+				}
+				chrome.storage.local.set({ autoSessionsMax: maxValue }, () => {
+					console.log(`Auto sessions max set to: ${maxValue}`);
+					showNotification(
+						'Настройки Обновлены',
+						`Максимальное количество авто сессий установлено на ${maxValue}.`
+					);
+				});
+			});
+		}
+
+		// Обработчики переключателей Сессий при Изменении Вкладок
+		const changeSessionsEnabledSwitch = document.getElementById(
+			'changeSessionsEnabledSwitch'
+		);
+		const changeSessionsMaxInput = document.getElementById(
+			'changeSessionsMaxInput'
+		);
+
+		if (changeSessionsEnabledSwitch) {
+			changeSessionsEnabledSwitch.addEventListener('change', () => {
+				const isEnabled = changeSessionsEnabledSwitch.checked;
+				chrome.storage.local.set({ changeSessionsEnabled: isEnabled }, () => {
+					console.log(`Change sessions ${isEnabled ? 'enabled' : 'disabled'}`);
+					showNotification(
+						'Настройки Обновлены',
+						`Сессии при изменении ${isEnabled ? 'включены' : 'отключены'}.`
+					);
+					loadSessions(); // Перезагружаем сессии, чтобы отразить изменения
+				});
+			});
+		}
+
+		if (changeSessionsMaxInput) {
+			changeSessionsMaxInput.addEventListener('change', () => {
+				let maxValue = parseInt(changeSessionsMaxInput.value, 10);
+				if (isNaN(maxValue) || maxValue < 0) {
+					maxValue = 0;
+				}
+				chrome.storage.local.set({ changeSessionsMax: maxValue }, () => {
+					console.log(`Change sessions max set to: ${maxValue}`);
+					showNotification(
+						'Настройки Обновлены',
+						`Максимальное количество сессий при изменении установлено на ${maxValue}.`
+					);
+				});
+			});
+		}
+
+		// Обработчик переключателя Темы
+		if (themeSwitch) {
+			themeSwitch.addEventListener('change', () => {
+				if (themeSwitch.checked) {
+					htmlElement.classList.add('dark-theme');
+					chrome.storage.local.set({ theme: 'dark' }, () => {
+						console.log('Theme set to dark');
+					});
 				} else {
-					// Показать форму и сбросить её
-					console.log('Create Group button clicked');
-					createGroupForm.style.display = 'block';
-					resetCreateGroupForm();
+					htmlElement.classList.remove('dark-theme');
+					chrome.storage.local.set({ theme: 'light' }, () => {
+						console.log('Theme set to light');
+					});
 				}
 			});
 		}
 
-		if (searchInput) {
-			searchInput.addEventListener('input', () => {
-				const query = searchInput.value.toLowerCase();
-				console.log(`Search query: ${query}`);
-				filterSessions(query);
+		// Обработчик переключателя Уведомлений
+		if (notificationSwitch) {
+			notificationSwitch.addEventListener('change', () => {
+				const isEnabled = notificationSwitch.checked;
+				chrome.storage.local.set({ notificationsEnabled: isEnabled }, () => {
+					console.log(`Notifications ${isEnabled ? 'enabled' : 'disabled'}`);
+					showNotification(
+						'Настройки Обновлены',
+						`Push уведомления ${isEnabled ? 'включены' : 'отключены'}.`
+					);
+				});
 			});
 		}
 
-		// Обработчики для переключения типа группы
+		// Обработчик изменения Интервала Автобэкапа
+		if (intervalInput) {
+			intervalInput.addEventListener('change', () => {
+				let intervalValue = parseInt(intervalInput.value, 10);
+				console.log(`AutoBackup interval changed to: ${intervalValue}`);
+				if (intervalValue >= 1) {
+					chrome.storage.local.set(
+						{ autoBackupInterval: intervalValue },
+						() => {
+							showNotification(
+								'Настройки Обновлены',
+								`Интервал автосохранения установлен на ${intervalValue} минут.`
+							);
+						}
+					);
+				} else {
+					intervalInput.value = 10;
+					chrome.storage.local.set({ autoBackupInterval: 10 }, () => {
+						showNotification(
+							'Настройки Обновлены',
+							'Интервал автосохранения сброшен на значение по умолчанию (10 минут).'
+						);
+					});
+				}
+			});
+		}
+
+		// Обработчики для кнопок Импорта и Экспорта
+		if (importBtn && importFileInput) {
+			// Обработчик для кнопки импорта
+			importBtn.addEventListener('click', () => {
+				console.log('Import button clicked');
+				importFileInput.click();
+			});
+
+			// Обработчик для выбора файла импорта
+			importFileInput.addEventListener('change', handleImportFile);
+		}
+
+		if (exportBtn) {
+			// Обработчик для кнопки экспорта
+			exportBtn.addEventListener('click', () => {
+				console.log('Export button clicked');
+				exportSessions();
+			});
+		}
+
+		// Инициализация значений настроек при загрузке вкладки "Настройки"
+		initializeSettings(themeSwitch, notificationSwitch, intervalInput);
+	}
+
+	// --- Инициализация настроек ---
+	function initializeSettings(themeSwitch, notificationSwitch, intervalInput) {
+		// Тема
+		chrome.storage.local.get(['theme'], (result) => {
+			const savedTheme = result.theme || 'light';
+			console.log(`Initializing theme: ${savedTheme}`);
+			if (savedTheme === 'dark') {
+				htmlElement.classList.add('dark-theme');
+				if (themeSwitch) themeSwitch.checked = true;
+			} else {
+				htmlElement.classList.remove('dark-theme');
+				if (themeSwitch) themeSwitch.checked = false;
+			}
+		});
+
+		// Уведомления
+		chrome.storage.local.get(['notificationsEnabled'], (result) => {
+			const notificationsEnabled = result.notificationsEnabled !== false;
+			if (notificationSwitch) notificationSwitch.checked = notificationsEnabled;
+			console.log(`Initializing notifications: ${notificationsEnabled}`);
+		});
+
+		// Интервал
+		chrome.storage.local.get(['autoBackupInterval'], (result) => {
+			const interval = result.autoBackupInterval || 10;
+			if (intervalInput) intervalInput.value = interval;
+			console.log(`Initializing autoBackupInterval: ${interval}`);
+		});
+
+		// Настройки Ручных Сессий
+		const manualSessionsEnabledSwitch = document.getElementById(
+			'manualSessionsEnabledSwitch'
+		);
+		const manualSessionsMaxInput = document.getElementById(
+			'manualSessionsMaxInput'
+		);
+		chrome.storage.local.get(
+			['manualSessionsEnabled', 'manualSessionsMax'],
+			(result) => {
+				const manualSessionsEnabled = result.manualSessionsEnabled !== false;
+				if (manualSessionsEnabledSwitch)
+					manualSessionsEnabledSwitch.checked = manualSessionsEnabled;
+				const manualSessionsMax = result.manualSessionsMax;
+				if (manualSessionsMaxInput)
+					manualSessionsMaxInput.value =
+						manualSessionsMax !== undefined ? manualSessionsMax : 5;
+			}
+		);
+
+		// Настройки Авто Сессий
+		const autoSessionsEnabledSwitch = document.getElementById(
+			'autoSessionsEnabledSwitch'
+		);
+		const autoSessionsMaxInput = document.getElementById(
+			'autoSessionsMaxInput'
+		);
+		chrome.storage.local.get(
+			['autoSessionsEnabled', 'autoSessionsMax'],
+			(result) => {
+				const autoSessionsEnabled = result.autoSessionsEnabled !== false;
+				if (autoSessionsEnabledSwitch)
+					autoSessionsEnabledSwitch.checked = autoSessionsEnabled;
+				const autoSessionsMax = result.autoSessionsMax;
+				if (autoSessionsMaxInput)
+					autoSessionsMaxInput.value =
+						autoSessionsMax !== undefined ? autoSessionsMax : 5;
+			}
+		);
+
+		// Настройки Сессий при Изменении Вкладок
+		const changeSessionsEnabledSwitch = document.getElementById(
+			'changeSessionsEnabledSwitch'
+		);
+		const changeSessionsMaxInput = document.getElementById(
+			'changeSessionsMaxInput'
+		);
+		chrome.storage.local.get(
+			['changeSessionsEnabled', 'changeSessionsMax'],
+			(result) => {
+				const changeSessionsEnabled = result.changeSessionsEnabled !== false;
+				if (changeSessionsEnabledSwitch)
+					changeSessionsEnabledSwitch.checked = changeSessionsEnabled;
+				const changeSessionsMax = result.changeSessionsMax;
+				if (changeSessionsMaxInput)
+					changeSessionsMaxInput.value =
+						changeSessionsMax !== undefined ? changeSessionsMax : 5;
+			}
+		);
+	}
+
+	// --- Функции для вкладки "Сессии" ---
+
+	// Функция для обновления типа группы
+	function updateGroupType() {
 		const groupSessionOption = document.getElementById('groupSessionOption');
 		const groupCustomOption = document.getElementById('groupCustomOption');
+		const sessionGroupOptions = document.getElementById('sessionGroupOptions');
+		const customGroupOptions = document.getElementById('customGroupOptions');
 
-		if (groupSessionOption && groupCustomOption) {
-			groupSessionOption.addEventListener('change', updateGroupType);
-			groupCustomOption.addEventListener('change', updateGroupType);
+		if (
+			groupSessionOption &&
+			groupCustomOption &&
+			sessionGroupOptions &&
+			customGroupOptions
+		) {
+			if (groupSessionOption.checked) {
+				sessionGroupOptions.style.display = 'block';
+				customGroupOptions.style.display = 'none';
+			} else if (groupCustomOption.checked) {
+				sessionGroupOptions.style.display = 'none';
+				customGroupOptions.style.display = 'block';
+			}
 		}
-
-		// Инициализируем видимость элементов на основе выбранного типа группы
-		updateGroupType();
-
-		// Обработчики для кнопок "Сохранить Группу" и "Отмена"
-		const saveGroupBtn = document.getElementById('saveGroupBtn');
-		const cancelGroupBtn = document.getElementById('cancelGroupBtn');
-
-		if (saveGroupBtn) {
-			saveGroupBtn.addEventListener('click', saveGroup);
-		}
-
-		if (cancelGroupBtn) {
-			cancelGroupBtn.addEventListener('click', () => {
-				createGroupForm.style.display = 'none';
-			});
-		}
-
-		// Обработчик для добавления новых полей ввода ссылок
-		const addGroupUrlBtn = document.getElementById('addGroupUrlBtn');
-		if (addGroupUrlBtn) {
-			addGroupUrlBtn.addEventListener('click', () => {
-				addCustomGroupUrlInput();
-			});
-		}
-
-		// Обработчики для элементов сессий и групп
-		attachSessionEventListeners();
-	}
-	// --- Реализация функции openSaveSessionDialog() ---
-	function openSaveSessionDialog() {
-		// Получаем список всех открытых окон и вкладок
-		chrome.windows.getAll({ populate: true }, (windows) => {
-			// Создаём диалоговое окно для выбора окон
-			const dialog = document.createElement('div');
-			dialog.className = 'save-session-dialog';
-
-			dialog.innerHTML = `
-                <div class="dialog-content">
-                    <h2>Сохранить Сессию</h2>
-                    <label for="sessionNameInput">Название сессии:</label>
-                    <input type="text" id="sessionNameInput" placeholder="Введите название сессии" />
-
-                    <p>Выберите окна для сохранения:</p>
-                    <div id="windowSelectionContainer">
-                        ${windows
-													.map(
-														(window, index) => `
-                            <label>
-                                <input type="checkbox" class="window-checkbox" value="${
-																	window.id
-																}" checked />
-                                Окно ${index + 1} (${
-															window.tabs.length
-														} вкладок)
-                            </label>
-                        `
-													)
-													.join('')}
-                    </div>
-
-                    <button id="saveSessionConfirmBtn" class="button">Сохранить</button>
-                    <button id="cancelSessionBtn" class="button">Отмена</button>
-                </div>
-            `;
-
-			// Затемнение фона
-			const overlay = document.createElement('div');
-			overlay.className = 'dialog-overlay';
-			overlay.appendChild(dialog);
-			document.body.appendChild(overlay);
-
-			// Обработчики для кнопок диалога
-			document
-				.getElementById('saveSessionConfirmBtn')
-				.addEventListener('click', () => {
-					const sessionNameInput = document.getElementById('sessionNameInput');
-					const sessionName = sessionNameInput.value.trim();
-					if (!sessionName) {
-						alert('Пожалуйста, введите название сессии.');
-						return;
-					}
-
-					const selectedWindowIds = Array.from(
-						document.querySelectorAll('.window-checkbox:checked')
-					).map((checkbox) => parseInt(checkbox.value));
-
-					if (selectedWindowIds.length === 0) {
-						alert('Пожалуйста, выберите хотя бы одно окно для сохранения.');
-						return;
-					}
-
-					// Фильтруем выбранные окна
-					const selectedWindows = windows.filter((window) =>
-						selectedWindowIds.includes(window.id)
-					);
-
-					// Формируем объект сессии
-					const session = {
-						id: 'manual_' + Date.now(),
-						name: sessionName,
-						timestamp: Date.now(),
-						windows: selectedWindows.map((window) => ({
-							tabs: window.tabs.map((tab) => ({
-								title: tab.title,
-								url: tab.url,
-							})),
-						})),
-					};
-
-					// Сохраняем сессию
-					saveManualSession(session);
-
-					// Удаляем диалог
-					document.body.removeChild(overlay);
-				});
-
-			document
-				.getElementById('cancelSessionBtn')
-				.addEventListener('click', () => {
-					// Удаляем диалог
-					document.body.removeChild(overlay);
-				});
-		});
 	}
 
-	// --- Реализация функции saveManualSession(session) ---
-	function saveManualSession(session) {
+	// Функция для обновления типа планировки
+	function updateScheduleType() {
+		const scheduleSessionOption = document.getElementById(
+			'scheduleSessionOption'
+		);
+		const scheduleCustomOption = document.getElementById(
+			'scheduleCustomOption'
+		);
+		const sessionScheduleOptions = document.getElementById(
+			'sessionScheduleOptions'
+		);
+		const customScheduleOptions = document.getElementById(
+			'customScheduleOptions'
+		);
+
+		if (
+			scheduleSessionOption &&
+			scheduleCustomOption &&
+			sessionScheduleOptions &&
+			customScheduleOptions
+		) {
+			if (scheduleSessionOption.checked) {
+				sessionScheduleOptions.style.display = 'block';
+				customScheduleOptions.style.display = 'none';
+			} else if (scheduleCustomOption.checked) {
+				sessionScheduleOptions.style.display = 'none';
+				customScheduleOptions.style.display = 'block';
+			}
+		}
+	}
+
+	// Функция для загрузки сессий в выпадающий список при создании группы
+	function populateSessionsForGroupCreation() {
+		const sessionSelectForGroup = document.getElementById(
+			'sessionSelectForGroup'
+		);
+		if (!sessionSelectForGroup) return;
+
+		// Очищаем существующие опции
+		sessionSelectForGroup.innerHTML = '';
+
+		// Загружаем сессии из хранилища
 		chrome.storage.local.get(
-			['manualSessions', 'manualSessionsMax', 'manualSessionsEnabled'],
+			['autoSessions', 'changeSessions', 'manualSessions'],
 			(result) => {
-				if (result.manualSessionsEnabled === false) {
-					console.log('Manual sessions are disabled.');
-					return;
-				}
-				let manualSessions = result.manualSessions || [];
-				manualSessions.push(session);
-				let manualSessionsMax = result.manualSessionsMax;
-				if (manualSessionsMax === undefined || manualSessionsMax < 0) {
-					manualSessionsMax = 5; // значение по умолчанию
-				}
-				// Ограничение до manualSessionsMax
-				if (manualSessions.length > manualSessionsMax) {
-					manualSessions = manualSessions.slice(
-						manualSessions.length - manualSessionsMax
-					);
-				}
-				chrome.storage.local.set({ manualSessions }, () => {
-					if (chrome.runtime.lastError) {
-						console.error(
-							'Error saving manual session:',
-							chrome.runtime.lastError
-						);
-						showNotification('Ошибка', 'Не удалось сохранить сессию.');
-					} else {
-						loadSessions();
-						showNotification('Успех', 'Сессия успешно сохранена.');
-					}
+				const autoSessions = result.autoSessions || [];
+				const changeSessions = result.changeSessions || [];
+				const manualSessions = result.manualSessions || [];
+
+				const allSessions = [
+					...autoSessions.map((s, index) => ({
+						...s,
+						type: 'autoSessions',
+						index,
+					})),
+					...changeSessions.map((s, index) => ({
+						...s,
+						type: 'changeSessions',
+						index,
+					})),
+					...manualSessions.map((s, index) => ({
+						...s,
+						type: 'manualSessions',
+						index,
+					})),
+				];
+
+				allSessions.forEach((session) => {
+					const option = document.createElement('option');
+					option.value = `${session.type}_${session.index}`;
+					option.textContent = `${
+						session.type === 'autoSessions'
+							? 'Авто'
+							: session.type === 'changeSessions'
+							? 'Изменение'
+							: 'Ручная'
+					} - ${formatTimestamp(session.timestamp)}`;
+					sessionSelectForGroup.appendChild(option);
 				});
 			}
 		);
 	}
 
-	// --- Функция для загрузки сессий ---
-	function loadSessions() {
-		console.log('Loading sessions');
-		// Загрузка ручных сессий
-		chrome.storage.local.get(['manualSessions'], (result) => {
-			let manualSessions = result.manualSessions || [];
-			console.log(`Loaded manualSessions: ${manualSessions.length}`);
-			populateSessionList('manualSessions', manualSessions);
-		});
+	// Функция для загрузки сессий в выпадающий список при планировании
+	function loadSessionsForScheduling(sessionSelect) {
+		// Загрузка сессий из хранилища
+		chrome.storage.local.get(
+			['autoSessions', 'changeSessions', 'manualSessions'],
+			(result) => {
+				const autoSessions = result.autoSessions || [];
+				const changeSessions = result.changeSessions || [];
+				const manualSessions = result.manualSessions || [];
+				const allSessions = [
+					...autoSessions.map((s, index) => ({
+						...s,
+						type: 'autoSessions',
+						index,
+					})),
+					...changeSessions.map((s, index) => ({
+						...s,
+						type: 'changeSessions',
+						index,
+					})),
+					...manualSessions.map((s, index) => ({
+						...s,
+						type: 'manualSessions',
+						index,
+					})),
+				];
 
-		// Загрузка автоматических сессий
-		chrome.storage.local.get(['autoSessions'], (result) => {
-			let autoSessions = result.autoSessions || [];
-			console.log(`Loaded autoSessions: ${autoSessions.length}`);
-			populateSessionList('autoSessions', autoSessions);
-		});
+				sessionSelect.innerHTML = '';
 
-		// Загрузка сессий, сохранённых при изменении вкладок
-		chrome.storage.local.get(['changeSessions'], (result) => {
-			let changeSessions = result.changeSessions || [];
-			console.log(`Loaded changeSessions: ${changeSessions.length}`);
-			populateSessionList('changeSessions', changeSessions);
-		});
-
-		// После загрузки сессий, загружаем группы
-		loadGroups();
-		populateSessionsForGroupCreation();
+				allSessions.forEach((session) => {
+					const option = document.createElement('option');
+					option.value = `${session.type}_${session.index}`;
+					option.textContent = `${
+						session.type === 'autoSessions'
+							? 'Авто'
+							: session.type === 'changeSessions'
+							? 'Изменение'
+							: 'Ручная'
+					} - ${formatTimestamp(session.timestamp)}`;
+					sessionSelect.appendChild(option);
+				});
+			}
+		);
 	}
 
-	// --- Функция для заполнения списка сессий ---
+	// Функция для загрузки сессий
+	function loadSessions() {
+		console.log('Loading sessions');
+		// Получаем все необходимые данные одним вызовом
+		chrome.storage.local.get(
+			[
+				'manualSessions',
+				'autoSessions',
+				'changeSessions',
+				'groups',
+				'manualSessionsEnabled',
+				'autoSessionsEnabled',
+				'changeSessionsEnabled',
+			],
+			(result) => {
+				const manualSessionsEnabled = result.manualSessionsEnabled !== false;
+				const autoSessionsEnabled = result.autoSessionsEnabled !== false;
+				const changeSessionsEnabled = result.changeSessionsEnabled !== false;
+
+				// Получаем ссылки на элементы DOM
+				const manualSessionsDiv = document.getElementById('manualSessions');
+				const autoSessionsDiv = document.getElementById('autoSessions');
+				const changeSessionsDiv = document.getElementById('changeSessions');
+				const customGroupsDiv = document.getElementById('customGroups');
+
+				// Обрабатываем ручные сессии
+				if (manualSessionsDiv) {
+					if (manualSessionsEnabled) {
+						manualSessionsDiv.style.display = 'block';
+						const manualSessions = result.manualSessions || [];
+						console.log(`Loaded manualSessions: ${manualSessions.length}`);
+						populateSessionList('manualSessions', manualSessions);
+					} else {
+						manualSessionsDiv.style.display = 'none';
+					}
+				}
+
+				// Обрабатываем автоматические сессии
+				if (autoSessionsDiv) {
+					if (autoSessionsEnabled) {
+						autoSessionsDiv.style.display = 'block';
+						const autoSessions = result.autoSessions || [];
+						console.log(`Loaded autoSessions: ${autoSessions.length}`);
+						populateSessionList('autoSessions', autoSessions);
+					} else {
+						autoSessionsDiv.style.display = 'none';
+					}
+				}
+
+				// Обрабатываем сессии при изменении вкладок
+				if (changeSessionsDiv) {
+					if (changeSessionsEnabled) {
+						changeSessionsDiv.style.display = 'block';
+						const changeSessions = result.changeSessions || [];
+						console.log(`Loaded changeSessions: ${changeSessions.length}`);
+						populateSessionList('changeSessions', changeSessions);
+					} else {
+						changeSessionsDiv.style.display = 'none';
+					}
+				}
+
+				// Обрабатываем пользовательские группы (предполагается, что они всегда отображаются)
+				if (customGroupsDiv) {
+					customGroupsDiv.style.display = 'block';
+					const groups = result.groups || [];
+					console.log(`Loaded groups: ${groups.length}`);
+					populateSessionList('customGroups', groups);
+				}
+
+				// Загружаем группы и заполняем выпадающие списки
+				loadGroups();
+				populateSessionsForGroupCreation();
+			}
+		);
+	}
+
+	// Функция для заполнения списка сессий
 	function populateSessionList(elementId, sessions) {
 		const sessionList = document.getElementById(elementId);
 		if (!sessionList) {
 			console.error(`Element with id "${elementId}" not found.`);
 			return;
 		}
-		sessionList.innerHTML = `<h2>${
-			elementId === 'autoSessions'
-				? 'Автоматические Сессии'
-				: elementId === 'changeSessions'
-				? 'Сессии при Изменении Вкладок'
-				: 'Ручные Сессии'
-		}</h2>`;
+
+		let headerText = '';
+		switch (elementId) {
+			case 'autoSessions':
+				headerText = 'Автоматические Сессии';
+				break;
+			case 'changeSessions':
+				headerText = 'Сессии при Изменении Вкладок';
+				break;
+			case 'manualSessions':
+				headerText = 'Ручные Сессии';
+				break;
+			case 'customGroups':
+				headerText = 'Пользовательские Группы';
+				break;
+			default:
+				headerText = 'Сессии';
+		}
+
+		sessionList.innerHTML = `<h3>${headerText}</h3>`;
 
 		if (sessions.length === 0) {
 			sessionList.innerHTML += '<p>Нет доступных сессий</p>';
@@ -438,31 +685,403 @@ document.addEventListener('DOMContentLoaded', () => {
 			const sessionItem = document.createElement('div');
 			sessionItem.className = 'session-item';
 			sessionItem.innerHTML = `
-                <div class="session-header">
-                    <span>${
-											session.name || formatTimestamp(session.timestamp)
-										}</span>
-                    <div>
-                        <button class="button-small view-btn" data-index="${index}" data-type="${elementId}">Просмотреть</button>
-                        <button class="button-small export-btn" data-index="${index}" data-type="${elementId}">Экспорт</button>
-                        <button class="button-small delete-btn" data-index="${index}" data-type="${elementId}">Удалить</button>
-                    </div>
-                </div>
-                <div class="session-details" style="display: none;"></div>
-            `;
+							<div class="session-header">
+									<span>${session.name || formatTimestamp(session.timestamp)}</span>
+									<div>
+											<button class="button-small view-btn" data-index="${index}" data-type="${elementId}">Просмотреть</button>
+											<button class="button-small export-btn" data-index="${index}" data-type="${elementId}">Экспорт</button>
+											<button class="button-small delete-btn" data-index="${index}" data-type="${elementId}">Удалить</button>
+									</div>
+							</div>
+							<div class="session-details" style="display: none;"></div>
+					`;
 			fragment.appendChild(sessionItem);
 		});
 
 		sessionList.appendChild(fragment);
 	}
 
-	// --- Остальной ваш код без изменений ---
-	// Функции для управления группами, планирования, настройки и другие функции остаются без изменений
-	// Ниже приведены все оставшиеся функции, адаптированные для поддержки manualSessions
+	// Функция для форматирования временной метки
+	function formatTimestamp(timestamp) {
+		const date = new Date(timestamp);
 
-	// --- Функции для управления группами ---
+		if (isNaN(date.getTime())) {
+			console.error('Invalid date detected:', timestamp);
+			return 'Неверная дата';
+		}
 
-	// Функция для сохранения группы
+		return date.toLocaleString('ru-RU', {
+			timeZone: 'Europe/Moscow', // Обновлённая временная зона
+			day: '2-digit',
+			month: '2-digit',
+			year: 'numeric',
+			hour: '2-digit',
+			minute: '2-digit',
+		});
+	}
+
+	// Функция для отображения деталей сессии
+	function viewSessionDetails(sessionIndex, sessionType, button) {
+		console.log(
+			`Viewing session details: Type=${sessionType}, Index=${sessionIndex}`
+		);
+		chrome.storage.local.get([sessionType], (result) => {
+			const sessions = result[sessionType] || [];
+			const session = sessions[sessionIndex];
+
+			if (!session) {
+				console.error('Session not found:', sessionIndex, sessionType);
+				showNotification('Ошибка', 'Сессия не найдена.');
+				return;
+			}
+
+			const detailsDiv = button.parentElement.parentElement.nextElementSibling;
+			if (detailsDiv.style.display === 'block') {
+				detailsDiv.style.display = 'none';
+				button.textContent = 'Просмотреть';
+				return;
+			}
+
+			detailsDiv.innerHTML = ''; // Очищаем детали
+
+			session.windows.forEach((window, index) => {
+				const windowItem = document.createElement('div');
+				windowItem.className = 'window-item';
+				windowItem.innerHTML = `
+									<p>Окно ${index + 1} (${window.tabs.length} вкладок)</p>
+									<button class="button-small toggle-tabs-btn">Показать Вкладки</button>
+									<div class="tabs-container" style="display: none;">
+											<ul>
+													${window.tabs
+														.map(
+															(tab) =>
+																`<li><a href="${
+																	tab.url
+																}" target="_blank" title="${escapeHtml(
+																	tab.title
+																)}">${escapeHtml(tab.title)}</a></li>`
+														)
+														.join('')}
+											</ul>
+											<button class="button-small restore-btn" data-window-index="${index}" data-session-type="${sessionType}" data-session-index="${sessionIndex}">Восстановить Это Окно</button>
+									</div>
+							`;
+				detailsDiv.appendChild(windowItem);
+			});
+
+			const restoreAllButton = document.createElement('button');
+			restoreAllButton.className = 'button';
+			restoreAllButton.textContent = 'Восстановить Все Окна';
+			restoreAllButton.onclick = () => restoreAllWindows(session.windows);
+
+			detailsDiv.appendChild(restoreAllButton);
+
+			detailsDiv.style.display = 'block';
+			button.textContent = 'Скрыть';
+		});
+	}
+
+	// --- Обработчики для вкладки "Сессии" ---
+	function attachSessionsTabEventListeners() {
+		// Обработчики кликов на сессии и группы
+		contentContainer.addEventListener('click', handleSessionClick);
+
+		// Обработчики для создания группы
+		const createGroupBtn = document.getElementById('createGroupBtn');
+		const createGroupForm = document.getElementById('createGroupForm');
+		const saveGroupBtn = document.getElementById('saveGroupBtn');
+		const cancelGroupBtn = document.getElementById('cancelGroupBtn');
+		const addGroupUrlBtn = document.getElementById('addGroupUrlBtn');
+		const groupSessionOption = document.getElementById('groupSessionOption');
+		const groupCustomOption = document.getElementById('groupCustomOption');
+
+		if (createGroupBtn) {
+			createGroupBtn.addEventListener('click', () => {
+				if (createGroupForm) {
+					createGroupForm.style.display = 'block';
+				}
+			});
+		}
+
+		if (saveGroupBtn) {
+			saveGroupBtn.addEventListener('click', saveGroup);
+		}
+
+		if (cancelGroupBtn) {
+			cancelGroupBtn.addEventListener('click', () => {
+				if (createGroupForm) {
+					createGroupForm.style.display = 'none';
+					resetCreateGroupForm();
+				}
+			});
+		}
+
+		if (addGroupUrlBtn) {
+			addGroupUrlBtn.addEventListener('click', addCustomGroupUrlInput);
+		}
+
+		if (groupSessionOption) {
+			groupSessionOption.addEventListener('change', updateGroupType);
+		}
+
+		if (groupCustomOption) {
+			groupCustomOption.addEventListener('change', updateGroupType);
+		}
+
+		// Инициализируем видимость элементов на основе выбранного типа группы
+		updateGroupType();
+
+		// Добавляем обработчик для кнопки сохранения ручной сессии, если она существует
+		const saveManualSessionBtn = document.getElementById('saveBtn');
+		if (saveManualSessionBtn) {
+			saveManualSessionBtn.addEventListener('click', () => {
+				openSaveSessionDialog();
+			});
+		}
+	}
+
+	function handleSessionClick(e) {
+		// Сессии
+		if (e.target.classList.contains('view-btn')) {
+			const sessionIndex = e.target.getAttribute('data-index');
+			const sessionType = e.target.getAttribute('data-type');
+			console.log(`View session: Type=${sessionType}, Index=${sessionIndex}`);
+			viewSessionDetails(sessionIndex, sessionType, e.target);
+		} else if (e.target.classList.contains('restore-btn')) {
+			const windowIndex = e.target.getAttribute('data-window-index');
+			const sessionType = e.target.getAttribute('data-session-type');
+			const sessionIndex = e.target.getAttribute('data-session-index');
+			console.log(
+				`Restore window: Type=${sessionType}, SessionIndex=${sessionIndex}, WindowIndex=${windowIndex}`
+			);
+			restoreWindowFromSession(windowIndex, sessionType, sessionIndex);
+		} else if (e.target.classList.contains('toggle-tabs-btn')) {
+			const tabsContainer = e.target.nextElementSibling;
+			if (tabsContainer.style.display === 'block') {
+				tabsContainer.style.display = 'none';
+				e.target.textContent = 'Показать Вкладки';
+			} else {
+				tabsContainer.style.display = 'block';
+				e.target.textContent = 'Скрыть Вкладки';
+			}
+		} else if (e.target.classList.contains('delete-btn')) {
+			const sessionIndex = e.target.getAttribute('data-index');
+			const sessionType = e.target.getAttribute('data-type');
+			console.log(`Delete session: Type=${sessionType}, Index=${sessionIndex}`);
+			deleteSession(sessionIndex, sessionType);
+		} else if (e.target.classList.contains('export-btn')) {
+			const sessionIndex = e.target.getAttribute('data-index');
+			const sessionType = e.target.getAttribute('data-type');
+			console.log(`Export session: Type=${sessionType}, Index=${sessionIndex}`);
+			exportSession(sessionIndex, sessionType);
+		}
+
+		// Группы
+		if (e.target.classList.contains('view-group-btn')) {
+			const groupIndex = e.target.getAttribute('data-index');
+			console.log(`View group: Index=${groupIndex}`);
+			viewGroupDetails(groupIndex, e.target);
+		} else if (e.target.classList.contains('delete-group-btn')) {
+			const groupIndex = e.target.getAttribute('data-index');
+			console.log(`Delete group: Index=${groupIndex}`);
+			deleteGroup(groupIndex);
+		}
+	}
+
+	// --- Функция для отображения деталей группы ---
+	function viewGroupDetails(groupIndex, button) {
+		chrome.storage.local.get(
+			['groups', 'autoSessions', 'changeSessions', 'manualSessions'],
+			(result) => {
+				const groups = result.groups || [];
+				const group = groups[groupIndex];
+
+				if (!group) {
+					console.error('Group not found:', groupIndex);
+					showNotification('Ошибка', 'Группа не найдена.');
+					return;
+				}
+
+				const detailsDiv =
+					button.parentElement.parentElement.nextElementSibling;
+				if (detailsDiv.style.display === 'block') {
+					detailsDiv.style.display = 'none';
+					button.textContent = 'Просмотреть';
+					detailsDiv.classList.remove('group-details'); // Удаляем класс при скрытии
+					return;
+				}
+
+				detailsDiv.innerHTML = ''; // Очищаем предыдущие детали
+
+				if (group.type === 'session') {
+					// Отображаем сессии в группе
+					const sessionList = document.createElement('ul');
+					group.sessions.forEach((sessionId) => {
+						const [sessionType, sessionIndex] = sessionId.split('_');
+						const sessions = result[sessionType] || [];
+						const session = sessions[sessionIndex];
+						const li = document.createElement('li');
+						if (session) {
+							li.textContent = `${
+								sessionType === 'autoSessions'
+									? 'Авто'
+									: sessionType === 'changeSessions'
+									? 'Изменение'
+									: 'Ручная'
+							} - ${formatTimestamp(session.timestamp)}`;
+						} else {
+							li.textContent = 'Сессия не найдена';
+						}
+						sessionList.appendChild(li);
+					});
+					detailsDiv.appendChild(sessionList);
+				} else if (group.type === 'custom') {
+					// Отображаем кастомные ссылки
+					const linkList = document.createElement('ul');
+					group.customLinks.forEach((url) => {
+						const li = document.createElement('li');
+						li.innerHTML = `<a href="${url}" target="_blank">${escapeHtml(
+							url
+						)}</a>`;
+						linkList.appendChild(li);
+					});
+					detailsDiv.appendChild(linkList);
+				}
+
+				const restoreGroupButton = document.createElement('button');
+				restoreGroupButton.className = 'button';
+				restoreGroupButton.textContent = 'Восстановить Группу';
+				restoreGroupButton.onclick = () => restoreGroup(group);
+
+				detailsDiv.appendChild(restoreGroupButton);
+
+				detailsDiv.classList.add('group-details'); // Добавляем класс
+				detailsDiv.style.display = 'block';
+				button.textContent = 'Скрыть';
+			}
+		);
+	}
+
+	// --- Функция для восстановления группы ---
+	function restoreGroup(group) {
+		if (group.type === 'session') {
+			// Восстанавливаем каждую сессию в группе
+			group.sessions.forEach((sessionId) => {
+				const [sessionType, sessionIndex] = sessionId.split('_');
+				restoreSessionByTypeAndIndex(sessionType, sessionIndex);
+			});
+		} else if (group.type === 'custom') {
+			// Открываем кастомные ссылки
+			openCustomUrls(group.customLinks);
+		}
+	}
+
+	// --- Функция для восстановления сессии по типу и индексу ---
+	function restoreSessionByTypeAndIndex(sessionType, sessionIndex) {
+		chrome.storage.local.get([sessionType], (result) => {
+			const sessions = result[sessionType] || [];
+			const session = sessions[sessionIndex];
+			if (session) {
+				restoreAllWindows(session.windows);
+			} else {
+				console.error('Session not found:', sessionType, sessionIndex);
+				showNotification('Ошибка', 'Сессия не найдена.');
+			}
+		});
+	}
+
+	// --- Функция для открытия кастомных URL ---
+	function openCustomUrls(urls) {
+		console.log(`Opening custom URLs: ${urls.length}`);
+		urls.forEach((url) => {
+			chrome.tabs.create({ url, active: false }, (tab) => {
+				if (chrome.runtime.lastError) {
+					console.error('Error opening URL:', chrome.runtime.lastError);
+				}
+			});
+		});
+	}
+
+	// --- Функция для восстановления окна из сессии ---
+	function restoreWindowFromSession(windowIndex, sessionType, sessionIndex) {
+		console.log(
+			`Restoring window: Type=${sessionType}, SessionIndex=${sessionIndex}, WindowIndex=${windowIndex}`
+		);
+		chrome.storage.local.get([sessionType], (result) => {
+			const sessions = result[sessionType] || [];
+			const session = sessions[sessionIndex];
+
+			if (session && session.windows[windowIndex]) {
+				restoreWindow(session.windows[windowIndex].tabs);
+			} else {
+				console.error('No matching session found for restoration.');
+				showNotification('Ошибка', 'Сессия не найдена.');
+			}
+		});
+	}
+
+	// --- Функция для восстановления отдельного окна ---
+	function restoreWindow(tabs) {
+		console.log(`Restoring window with ${tabs.length} tabs`);
+		if (tabs.length === 0) return; // Проверяем, есть ли вкладки для восстановления
+
+		const firstTab = tabs[0].url;
+		const otherTabs = tabs.slice(1).map((tab) => tab.url);
+
+		// Создаём новое окно с первой вкладкой
+		chrome.windows.create({ url: firstTab, state: 'normal' }, (newWindow) => {
+			if (!newWindow || !newWindow.id) {
+				console.error('Failed to create new window.');
+				showNotification('Ошибка', 'Не удалось создать новое окно.');
+				return;
+			}
+
+			// Добавляем остальные вкладки
+			otherTabs.forEach((url, index) => {
+				chrome.tabs.create(
+					{
+						windowId: newWindow.id,
+						url,
+						index: index + 1, // Устанавливаем порядок вкладок
+					},
+					(tab) => {
+						if (chrome.runtime.lastError) {
+							console.error('Error creating tab:', chrome.runtime.lastError);
+						}
+					}
+				);
+			});
+		});
+	}
+
+	// --- Функция для восстановления всех окон ---
+	function restoreAllWindows(windows) {
+		console.log(`Restoring all ${windows.length} windows`);
+		windows.forEach((window, windowIndex) => {
+			setTimeout(() => {
+				restoreWindow(window.tabs);
+			}, windowIndex * 900); // Восстанавливаем каждое окно с задержкой
+		});
+	}
+
+	// --- Функция для удаления группы ---
+	function deleteGroup(groupIndex) {
+		chrome.storage.local.get(['groups'], (result) => {
+			let groups = result.groups || [];
+			groups.splice(groupIndex, 1);
+			chrome.storage.local.set({ groups }, () => {
+				if (chrome.runtime.lastError) {
+					console.error('Error deleting group:', chrome.runtime.lastError);
+					showNotification('Ошибка', 'Не удалось удалить группу.');
+				} else {
+					loadGroups();
+					showNotification('Успех', 'Группа успешно удалена.');
+				}
+			});
+		});
+	}
+
+	// --- Функция для сохранения группы ---
 	function saveGroup() {
 		const groupNameInput = document.getElementById('groupNameInput');
 		const groupSessionOption = document.getElementById('groupSessionOption');
@@ -615,7 +1234,7 @@ document.addEventListener('DOMContentLoaded', () => {
 		const customGroupsContainer = document.getElementById('customGroups');
 		if (!customGroupsContainer) return;
 
-		customGroupsContainer.innerHTML = '<h2>Пользовательские Группы</h2>';
+		customGroupsContainer.innerHTML = '<h3>Пользовательские Группы</h3>';
 
 		chrome.storage.local.get(['groups'], (result) => {
 			const groups = result.groups || [];
@@ -631,15 +1250,15 @@ document.addEventListener('DOMContentLoaded', () => {
 				const groupItem = document.createElement('div');
 				groupItem.className = 'session-item group-item'; // Добавляем класс group-item
 				groupItem.innerHTML = `
-                    <div class="session-header">
-                        <span>${escapeHtml(group.name)}</span>
-                        <div>
-                            <button class="button-small view-group-btn" data-index="${index}">Просмотреть</button>
-                            <button class="button-small delete-group-btn" data-index="${index}">Удалить</button>
-                        </div>
-                    </div>
-                    <div class="session-details" style="display: none;"></div>
-                `;
+									<div class="session-header">
+											<span>${escapeHtml(group.name)}</span>
+											<div>
+													<button class="button-small view-group-btn" data-index="${index}">Просмотреть</button>
+													<button class="button-small delete-group-btn" data-index="${index}">Удалить</button>
+											</div>
+									</div>
+									<div class="session-details" style="display: none;"></div>
+							`;
 				fragment.appendChild(groupItem);
 			});
 
@@ -647,206 +1266,12 @@ document.addEventListener('DOMContentLoaded', () => {
 		});
 	}
 
-	// --- Обработчик для групп ---
-	function attachSessionEventListeners() {
-		contentContainer.addEventListener('click', handleSessionClick);
-	}
-
-	function handleSessionClick(e) {
-		// Существующий код для сессий
-		if (e.target.classList.contains('view-btn')) {
-			const sessionIndex = e.target.getAttribute('data-index');
-			const sessionType = e.target.getAttribute('data-type');
-			console.log(`View session: Type=${sessionType}, Index=${sessionIndex}`);
-			viewSessionDetails(sessionIndex, sessionType, e.target);
-		} else if (e.target.classList.contains('restore-btn')) {
-			const windowIndex = e.target.getAttribute('data-window-index');
-			const sessionType = e.target.getAttribute('data-session-type');
-			const sessionIndex = e.target.getAttribute('data-session-index');
-			console.log(
-				`Restore window: Type=${sessionType}, SessionIndex=${sessionIndex}, WindowIndex=${windowIndex}`
-			);
-			restoreWindowFromSession(windowIndex, sessionType, sessionIndex);
-		} else if (e.target.classList.contains('toggle-tabs-btn')) {
-			const tabsContainer = e.target.nextElementSibling;
-			if (tabsContainer.style.display === 'block') {
-				tabsContainer.style.display = 'none';
-				e.target.textContent = 'Показать Вкладки';
-			} else {
-				tabsContainer.style.display = 'block';
-				e.target.textContent = 'Скрыть Вкладки';
-			}
-		} else if (e.target.classList.contains('delete-btn')) {
-			const sessionIndex = e.target.getAttribute('data-index');
-			const sessionType = e.target.getAttribute('data-type');
-			console.log(`Delete session: Type=${sessionType}, Index=${sessionIndex}`);
-			deleteSession(sessionIndex, sessionType);
-		} else if (e.target.classList.contains('export-btn')) {
-			const sessionIndex = e.target.getAttribute('data-index');
-			const sessionType = e.target.getAttribute('data-type');
-			console.log(`Export session: Type=${sessionType}, Index=${sessionIndex}`);
-			exportSession(sessionIndex, sessionType);
-		}
-
-		// Обработчики для групп
-		if (e.target.classList.contains('view-group-btn')) {
-			const groupIndex = e.target.getAttribute('data-index');
-			console.log(`View group: Index=${groupIndex}`);
-			viewGroupDetails(groupIndex, e.target);
-		} else if (e.target.classList.contains('delete-group-btn')) {
-			const groupIndex = e.target.getAttribute('data-index');
-			console.log(`Delete group: Index=${groupIndex}`);
-			deleteGroup(groupIndex);
-		}
-	}
-
-	// Функция для загрузки сессий в выпадающий список при создании группы
-	function populateSessionsForGroupCreation() {
-		const sessionSelectForGroup = document.getElementById(
-			'sessionSelectForGroup'
-		);
-		if (!sessionSelectForGroup) return;
-
-		// Очищаем существующие опции
-		sessionSelectForGroup.innerHTML = '';
-
-		// Загружаем сессии из хранилища
-		chrome.storage.local.get(
-			['autoSessions', 'changeSessions', 'manualSessions'],
-			(result) => {
-				const autoSessions = result.autoSessions || [];
-				const changeSessions = result.changeSessions || [];
-				const manualSessions = result.manualSessions || [];
-
-				const allSessions = [
-					...autoSessions.map((s, index) => ({
-						...s,
-						type: 'autoSessions',
-						index,
-					})),
-					...changeSessions.map((s, index) => ({
-						...s,
-						type: 'changeSessions',
-						index,
-					})),
-					...manualSessions.map((s, index) => ({
-						...s,
-						type: 'manualSessions',
-						index,
-					})),
-				];
-
-				allSessions.forEach((session) => {
-					const option = document.createElement('option');
-					option.value = `${session.type}_${session.index}`;
-					option.textContent = `${
-						session.type === 'autoSessions'
-							? 'Авто'
-							: session.type === 'changeSessions'
-							? 'Изменение'
-							: 'Ручная'
-					} - ${formatTimestamp(session.timestamp)}`;
-					sessionSelectForGroup.appendChild(option);
-				});
-			}
-		);
-	}
-
-	// Функция для отображения деталей группы
-	function viewGroupDetails(groupIndex, button) {
-		chrome.storage.local.get(
-			['groups', 'autoSessions', 'changeSessions', 'manualSessions'],
-			(result) => {
-				const groups = result.groups || [];
-				const group = groups[groupIndex];
-
-				if (!group) {
-					console.error('Group not found:', groupIndex);
-					showNotification('Ошибка', 'Группа не найдена.');
-					return;
-				}
-
-				const detailsDiv =
-					button.parentElement.parentElement.nextElementSibling;
-				if (detailsDiv.style.display === 'block') {
-					detailsDiv.style.display = 'none';
-					button.textContent = 'Просмотреть';
-					detailsDiv.classList.remove('group-details'); // Удаляем класс при скрытии
-					return;
-				}
-
-				detailsDiv.innerHTML = ''; // Очищаем предыдущие детали
-
-				if (group.type === 'session') {
-					// Отображаем сессии в группе
-					const sessionList = document.createElement('ul');
-					group.sessions.forEach((sessionId) => {
-						const [sessionType, sessionIndex] = sessionId.split('_');
-						const sessions = result[sessionType] || [];
-						const session = sessions[sessionIndex];
-						const li = document.createElement('li');
-						if (session) {
-							li.textContent = `${
-								sessionType === 'autoSessions'
-									? 'Авто'
-									: sessionType === 'changeSessions'
-									? 'Изменение'
-									: 'Ручная'
-							} - ${formatTimestamp(session.timestamp)}`;
-						} else {
-							li.textContent = 'Сессия не найдена';
-						}
-						sessionList.appendChild(li);
-					});
-					detailsDiv.appendChild(sessionList);
-				} else if (group.type === 'custom') {
-					// Отображаем кастомные ссылки
-					const linkList = document.createElement('ul');
-					group.customLinks.forEach((url) => {
-						const li = document.createElement('li');
-						li.innerHTML = `<a href="${url}" target="_blank">${escapeHtml(
-							url
-						)}</a>`;
-						linkList.appendChild(li);
-					});
-					detailsDiv.appendChild(linkList);
-				}
-
-				const restoreGroupButton = document.createElement('button');
-				restoreGroupButton.className = 'button restore-group-btn';
-				restoreGroupButton.textContent = 'Восстановить Группу';
-				restoreGroupButton.onclick = () => restoreGroup(group);
-
-				detailsDiv.appendChild(restoreGroupButton);
-
-				detailsDiv.classList.add('group-details'); // Добавляем класс
-				detailsDiv.style.display = 'block';
-				button.textContent = 'Скрыть';
-			}
-		);
-	}
-
-	// Функция для восстановления группы
-	function restoreGroup(group) {
-		if (group.type === 'session') {
-			// Восстанавливаем каждую сессию в группе
-			group.sessions.forEach((sessionId) => {
-				const [sessionType, sessionIndex] = sessionId.split('_');
-				restoreSessionByTypeAndIndex(sessionType, sessionIndex);
-			});
-		} else if (group.type === 'custom') {
-			// Открываем кастомные ссылки
-			openCustomUrls(group.customLinks);
-		}
-	}
-
-	// Функция для восстановления сессии по типу и индексу
-	function restoreSessionByTypeAndIndex(sessionType, sessionIndex) {
+	// --- Функция для восстановления сессии ---
+	function restoreSessionFromSessionTypeAndIndex(sessionType, sessionIndex) {
 		chrome.storage.local.get([sessionType], (result) => {
 			const sessions = result[sessionType] || [];
 			const session = sessions[sessionIndex];
 			if (session) {
-				// Восстанавливаем все окна в сессии
 				restoreAllWindows(session.windows);
 			} else {
 				console.error('Session not found:', sessionType, sessionIndex);
@@ -855,217 +1280,7 @@ document.addEventListener('DOMContentLoaded', () => {
 		});
 	}
 
-	// Функция для открытия кастомных URL
-	function openCustomUrls(urls) {
-		console.log(`Opening custom URLs: ${urls.length}`);
-		urls.forEach((url) => {
-			chrome.tabs.create({ url, active: false }, (tab) => {
-				if (chrome.runtime.lastError) {
-					console.error('Error opening URL:', chrome.runtime.lastError);
-				}
-			});
-		});
-	}
-
-	// Функция для удаления группы
-	function deleteGroup(groupIndex) {
-		chrome.storage.local.get(['groups'], (result) => {
-			let groups = result.groups || [];
-			groups.splice(groupIndex, 1);
-			chrome.storage.local.set({ groups }, () => {
-				if (chrome.runtime.lastError) {
-					console.error('Error deleting group:', chrome.runtime.lastError);
-					showNotification('Ошибка', 'Не удалось удалить группу.');
-				} else {
-					loadGroups();
-					showNotification('Успех', 'Группа успешно удалена.');
-				}
-			});
-		});
-	}
-
-	// Функция для фильтрации сессий по запросу
-	function filterSessions(query) {
-		document.querySelectorAll('.session-item').forEach((item) => {
-			const sessionName = item
-				.querySelector('.session-header span')
-				.textContent.toLowerCase();
-			if (sessionName.includes(query)) {
-				item.style.display = 'flex'; // Используем 'flex', чтобы сохранить расположение
-			} else {
-				item.style.display = 'none';
-			}
-		});
-
-		// Также фильтруем группы (теперь они имеют классы сессий)
-		document.querySelectorAll('.session-item').forEach((item) => {
-			const sessionHeader = item.querySelector('.session-header span');
-			if (sessionHeader) {
-				const name = sessionHeader.textContent.toLowerCase();
-				if (name.includes(query)) {
-					item.style.display = 'flex';
-				} else {
-					item.style.display = 'none';
-				}
-			}
-		});
-	}
-
-	// --- Функции для вкладки "Сессии" ---
-	// Функция для загрузки сессий
-	function loadSessions() {
-		console.log('Loading sessions');
-		// Загрузка ручных сессий
-		chrome.storage.local.get(['manualSessions'], (result) => {
-			let manualSessions = result.manualSessions || [];
-			console.log(`Loaded manualSessions: ${manualSessions.length}`);
-			populateSessionList('manualSessions', manualSessions);
-		});
-
-		// Загрузка автоматических сессий
-		chrome.storage.local.get(['autoSessions'], (result) => {
-			let autoSessions = result.autoSessions || [];
-			console.log(`Loaded autoSessions: ${autoSessions.length}`);
-			populateSessionList('autoSessions', autoSessions);
-		});
-
-		// Загрузка сессий, сохранённых при изменении вкладок
-		chrome.storage.local.get(['changeSessions'], (result) => {
-			let changeSessions = result.changeSessions || [];
-			console.log(`Loaded changeSessions: ${changeSessions.length}`);
-			populateSessionList('changeSessions', changeSessions);
-		});
-
-		// После загрузки сессий, загружаем группы
-		loadGroups();
-		populateSessionsForGroupCreation();
-	}
-
-	// Функция для заполнения списка сессий
-	function populateSessionList(elementId, sessions) {
-		const sessionList = document.getElementById(elementId);
-		if (!sessionList) {
-			console.error(`Element with id "${elementId}" not found.`);
-			return;
-		}
-		sessionList.innerHTML = `<h2>${
-			elementId === 'autoSessions'
-				? 'Автоматические Сессии'
-				: elementId === 'changeSessions'
-				? 'Сессии при Изменении Вкладок'
-				: 'Ручные Сессии'
-		}</h2>`;
-
-		if (sessions.length === 0) {
-			sessionList.innerHTML += '<p>Нет доступных сессий</p>';
-			return;
-		}
-
-		const fragment = document.createDocumentFragment();
-
-		sessions.forEach((session, index) => {
-			const sessionItem = document.createElement('div');
-			sessionItem.className = 'session-item';
-			sessionItem.innerHTML = `
-                <div class="session-header">
-                    <span>${
-											session.name || formatTimestamp(session.timestamp)
-										}</span>
-                    <div>
-                        <button class="button-small view-btn" data-index="${index}" data-type="${elementId}">Просмотреть</button>
-                        <button class="button-small export-btn" data-index="${index}" data-type="${elementId}">Экспорт</button>
-                        <button class="button-small delete-btn" data-index="${index}" data-type="${elementId}">Удалить</button>
-                    </div>
-                </div>
-                <div class="session-details" style="display: none;"></div>
-            `;
-			fragment.appendChild(sessionItem);
-		});
-
-		sessionList.appendChild(fragment);
-	}
-
-	// Функция для форматирования временной метки
-	function formatTimestamp(timestamp) {
-		const date = new Date(timestamp);
-
-		if (isNaN(date.getTime())) {
-			console.error('Invalid date detected:', timestamp);
-			return 'Неверная дата';
-		}
-
-		return date.toLocaleString('ru-RU', {
-			timeZone: 'Europe/Moscow', // Обновлённая временная зона
-			day: '2-digit',
-			month: '2-digit',
-			year: 'numeric',
-			hour: '2-digit',
-			minute: '2-digit',
-		});
-	}
-
-	// Функция для отображения деталей сессии
-	function viewSessionDetails(sessionIndex, sessionType, button) {
-		console.log(
-			`Viewing session details: Type=${sessionType}, Index=${sessionIndex}`
-		);
-		chrome.storage.local.get([sessionType], (result) => {
-			const sessions = result[sessionType] || [];
-			const session = sessions[sessionIndex];
-
-			if (!session) {
-				console.error('Session not found:', sessionIndex, sessionType);
-				showNotification('Ошибка', 'Сессия не найдена.');
-				return;
-			}
-
-			const detailsDiv = button.parentElement.parentElement.nextElementSibling;
-			if (detailsDiv.style.display === 'block') {
-				detailsDiv.style.display = 'none';
-				button.textContent = 'Просмотреть';
-				return;
-			}
-
-			detailsDiv.innerHTML = ''; // Очищаем детали
-
-			session.windows.forEach((window, index) => {
-				const windowItem = document.createElement('div');
-				windowItem.className = 'window-item';
-				windowItem.innerHTML = `
-                        <p>Окно ${index + 1} (${window.tabs.length} вкладок)</p>
-                        <button class="button-small toggle-tabs-btn">Показать Вкладки</button>
-                        <div class="tabs-container" style="display: none;">
-                            <ul>
-                                ${window.tabs
-																	.map(
-																		(tab) =>
-																			`<li><a href="${
-																				tab.url
-																			}" target="_blank" title="${escapeHtml(
-																				tab.title
-																			)}">${escapeHtml(tab.title)}</a></li>`
-																	)
-																	.join('')}
-                            </ul>
-                            <button class="button-small restore-btn" data-window-index="${index}" data-session-type="${sessionType}" data-session-index="${sessionIndex}">Восстановить Это Окно</button>
-                        </div>
-                    `;
-				detailsDiv.appendChild(windowItem);
-			});
-
-			const restoreAllButton = document.createElement('button');
-			restoreAllButton.className = 'button';
-			restoreAllButton.textContent = 'Восстановить Все Окна';
-			restoreAllButton.onclick = () => restoreAllWindows(session.windows);
-
-			detailsDiv.appendChild(restoreAllButton);
-
-			detailsDiv.style.display = 'block';
-			button.textContent = 'Скрыть';
-		});
-	}
-
-	// Функция для удаления сессии
+	// --- Функция для удаления сессии ---
 	function deleteSession(sessionIndex, sessionType) {
 		console.log(`Deleting session: Type=${sessionType}, Index=${sessionIndex}`);
 		chrome.storage.local.get([sessionType], (result) => {
@@ -1083,7 +1298,7 @@ document.addEventListener('DOMContentLoaded', () => {
 		});
 	}
 
-	// Функция для экспорта выбранной сессии
+	// --- Функция для экспорта выбранной сессии ---
 	function exportSession(sessionIndex, sessionType) {
 		console.log(
 			`Exporting session: Type=${sessionType}, Index=${sessionIndex}`
@@ -1117,68 +1332,334 @@ document.addEventListener('DOMContentLoaded', () => {
 		});
 	}
 
-	// Функция для восстановления окна из сессии
-	function restoreWindowFromSession(windowIndex, sessionType, sessionIndex) {
-		console.log(
-			`Restoring window: Type=${sessionType}, SessionIndex=${sessionIndex}, WindowIndex=${windowIndex}`
-		);
-		chrome.storage.local.get([sessionType], (result) => {
-			const sessions = result[sessionType] || [];
-			const session = sessions[sessionIndex];
+	// --- Функция для экспорта всех сессий ---
+	function exportSessions() {
+		console.log('Exporting all sessions');
+		chrome.storage.local.get(
+			['autoSessions', 'changeSessions', 'manualSessions'],
+			(result) => {
+				const data = {
+					autoSessions: result.autoSessions || [],
+					changeSessions: result.changeSessions || [],
+					manualSessions: result.manualSessions || [],
+				};
 
-			if (session && session.windows[windowIndex]) {
-				restoreWindow(session.windows[windowIndex].tabs);
-			} else {
-				console.error('No matching session found for restoration.');
-				showNotification(
-					'Ошибка',
-					'Не найдена подходящая сессия для восстановления.'
-				);
+				const jsonStr = JSON.stringify(data, null, 2);
+				const blob = new Blob([jsonStr], { type: 'application/json' });
+				const url = URL.createObjectURL(blob);
+				const downloadLink = document.createElement('a');
+				downloadLink.href = url;
+				const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+				downloadLink.download = `sessions_${timestamp}.json`;
+				document.body.appendChild(downloadLink);
+				downloadLink.click();
+				document.body.removeChild(downloadLink);
+				URL.revokeObjectURL(url);
+				showNotification('Экспорт', 'Все сессии успешно экспортированы.');
+			}
+		);
+	}
+
+	// --- Функция для отображения уведомлений ---
+	function showNotification(title, message) {
+		console.log(`Showing notification: ${title} - ${message}`);
+		chrome.storage.local.get(['notificationsEnabled'], (result) => {
+			if (result.notificationsEnabled !== false) {
+				if (chrome.notifications && chrome.notifications.create) {
+					chrome.notifications.create(
+						'',
+						{
+							type: 'basic',
+							iconUrl: 'icons/icon48.png',
+							title: title,
+							message: message,
+						},
+						(notificationId) => {
+							if (chrome.runtime.lastError) {
+								console.error('Notification Error:', chrome.runtime.lastError);
+							} else {
+								console.log('Notification shown with ID:', notificationId);
+							}
+						}
+					);
+				} else {
+					// Резервный вариант для браузеров без API уведомлений
+					alert(`${title}: ${message}`);
+				}
 			}
 		});
 	}
 
-	// Функция для восстановления отдельного окна
-	function restoreWindow(tabs) {
-		console.log(`Restoring window with ${tabs.length} tabs`);
-		if (tabs.length === 0) return; // Проверяем, есть ли вкладки для восстановления
+	// --- Функция для экранирования HTML-сущностей ---
+	function escapeHtml(text) {
+		const map = {
+			'&': '&amp;',
+			'<': '&lt;',
+			'>': '&gt;',
+			'"': '&quot;',
+			"'": '&#039;',
+		};
+		return text.replace(/[&<>"']/g, function (m) {
+			return map[m];
+		});
+	}
 
-		const firstTab = tabs[0].url;
-		const otherTabs = tabs.slice(1).map((tab) => tab.url);
+	// --- Функция для проверки корректности URL ---
+	function isValidUrl(string) {
+		try {
+			new URL(string);
+			return true;
+		} catch (_) {
+			return false;
+		}
+	}
 
-		// Создаём новое окно с первой вкладкой
-		chrome.windows.create({ url: firstTab, state: 'normal' }, (newWindow) => {
-			if (!newWindow || !newWindow.id) {
-				console.error('Failed to create new window.');
-				showNotification('Ошибка', 'Не удалось создать новое окно.');
-				return;
-			}
+	// --- Функция для обработки файла импорта ---
+	function handleImportFile(event) {
+		const file = event.target.files[0];
+		if (!file) {
+			console.log('No file selected for import');
+			showNotification('Импорт', 'Файл не выбран.');
+			return;
+		}
 
-			// Добавляем остальные вкладки
-			otherTabs.forEach((url, index) => {
-				chrome.tabs.create(
-					{
-						windowId: newWindow.id,
-						url,
-						index: index + 1, // Устанавливаем порядок вкладок
-					},
-					(tab) => {
-						if (chrome.runtime.lastError) {
-							console.error('Error creating tab:', chrome.runtime.lastError);
+		console.log(`Importing file: ${file.name}`);
+		const reader = new FileReader();
+		reader.onload = (e) => {
+			try {
+				const importedData = JSON.parse(e.target.result);
+				console.log('Imported data:', importedData);
+
+				// Проверка структуры данных
+				if (
+					(!importedData.autoSessions ||
+						!Array.isArray(importedData.autoSessions)) &&
+					(!importedData.changeSessions ||
+						!Array.isArray(importedData.changeSessions)) &&
+					(!importedData.manualSessions ||
+						!Array.isArray(importedData.manualSessions))
+				) {
+					throw new Error('Неверный формат данных сессий.');
+				}
+
+				const MAX_SESSIONS = 50; // Задайте максимально допустимое количество сессий
+
+				// Объединение существующих сессий с импортированными
+				chrome.storage.local.get(
+					['autoSessions', 'changeSessions', 'manualSessions'],
+					(result) => {
+						let existingAuto = result.autoSessions || [];
+						let existingChange = result.changeSessions || [];
+						let existingManual = result.manualSessions || [];
+
+						// Импортируем autoSessions, если они есть
+						if (
+							importedData.autoSessions &&
+							Array.isArray(importedData.autoSessions)
+						) {
+							existingAuto = [...existingAuto, ...importedData.autoSessions];
+							// Ограничение до MAX_SESSIONS
+							if (existingAuto.length > MAX_SESSIONS) {
+								existingAuto = existingAuto.slice(
+									existingAuto.length - MAX_SESSIONS
+								);
+							}
 						}
+
+						// Импортируем changeSessions, если они есть
+						if (
+							importedData.changeSessions &&
+							Array.isArray(importedData.changeSessions)
+						) {
+							existingChange = [
+								...existingChange,
+								...importedData.changeSessions,
+							];
+							// Ограничение до MAX_SESSIONS
+							if (existingChange.length > MAX_SESSIONS) {
+								existingChange = existingChange.slice(
+									existingChange.length - MAX_SESSIONS
+								);
+							}
+						}
+
+						// Импортируем manualSessions, если они есть
+						if (
+							importedData.manualSessions &&
+							Array.isArray(importedData.manualSessions)
+						) {
+							existingManual = [
+								...existingManual,
+								...importedData.manualSessions,
+							];
+							// Ограничение до MAX_SESSIONS
+							if (existingManual.length > MAX_SESSIONS) {
+								existingManual = existingManual.slice(
+									existingManual.length - MAX_SESSIONS
+								);
+							}
+						}
+
+						chrome.storage.local.set(
+							{
+								autoSessions: existingAuto,
+								changeSessions: existingChange,
+								manualSessions: existingManual,
+							},
+							() => {
+								if (chrome.runtime.lastError) {
+									console.error(
+										'Error importing sessions:',
+										chrome.runtime.lastError
+									);
+									showNotification(
+										'Ошибка Импорта',
+										'Не удалось импортировать сессии.'
+									);
+								} else {
+									loadTab('sessions'); // Перезагружаем вкладку "Сессии"
+									showNotification('Импорт', 'Сессии успешно импортированы.');
+								}
+							}
+						);
 					}
 				);
-			});
-		});
+			} catch (error) {
+				console.error('Error parsing imported file:', error);
+				showNotification('Ошибка Импорта', 'Неверный формат файла.');
+			}
+		};
+		reader.readAsText(file);
 	}
 
-	// Функция для восстановления всех окон
-	function restoreAllWindows(windows) {
-		console.log(`Restoring all ${windows.length} windows`);
-		windows.forEach((window, windowIndex) => {
-			setTimeout(() => {
-				restoreWindow(window.tabs);
-			}, windowIndex * 900); // Восстанавливаем каждое окно с задержкой
+	// --- Функция для сохранения сессии ---
+	function saveManualSession(session) {
+		chrome.storage.local.get(
+			['manualSessions', 'manualSessionsMax', 'manualSessionsEnabled'],
+			(result) => {
+				if (result.manualSessionsEnabled === false) {
+					console.log('Manual sessions are disabled.');
+					showNotification('Ошибка', 'Ручные сессии отключены.');
+					return;
+				}
+				let manualSessions = result.manualSessions || [];
+				manualSessions.push(session);
+				let manualSessionsMax = result.manualSessionsMax;
+				if (manualSessionsMax === undefined || manualSessionsMax < 0) {
+					manualSessionsMax = 5; // значение по умолчанию
+				}
+				// Ограничение до manualSessionsMax
+				if (manualSessions.length > manualSessionsMax) {
+					manualSessions = manualSessions.slice(
+						manualSessions.length - manualSessionsMax
+					);
+				}
+				chrome.storage.local.set({ manualSessions }, () => {
+					if (chrome.runtime.lastError) {
+						console.error(
+							'Error saving manual session:',
+							chrome.runtime.lastError
+						);
+						showNotification('Ошибка', 'Не удалось сохранить сессию.');
+					} else {
+						loadSessions();
+						showNotification('Успех', 'Сессия успешно сохранена.');
+					}
+				});
+			}
+		);
+	}
+
+	// --- Функция для открытия диалога сохранения сессии ---
+	function openSaveSessionDialog() {
+		// Получаем список всех открытых окон и вкладок
+		chrome.windows.getAll({ populate: true }, (windows) => {
+			// Создаём диалоговое окно для выбора окон
+			const dialog = document.createElement('div');
+			dialog.className = 'save-session-dialog';
+
+			dialog.innerHTML = `
+							<div class="dialog-content">
+									<h2>Сохранить Сессию</h2>
+									<label for="sessionNameInput">Название сессии:</label>
+									<input type="text" id="sessionNameInput" placeholder="Введите название сессии" />
+
+									<p>Выберите окна для сохранения:</p>
+									<div id="windowSelectionContainer">
+											${windows
+												.map(
+													(window, index) => `
+													<label>
+															<input type="checkbox" class="window-checkbox" value="${window.id}" checked />
+															Окно ${index + 1} (${window.tabs.length} вкладок)
+													</label>
+											`
+												)
+												.join('')}
+									</div>
+
+									<button id="saveSessionConfirmBtn" class="button">Сохранить</button>
+									<button id="cancelSessionBtn" class="button">Отмена</button>
+							</div>
+					`;
+
+			// Затемнение фона
+			const overlay = document.createElement('div');
+			overlay.className = 'dialog-overlay';
+			overlay.appendChild(dialog);
+			document.body.appendChild(overlay);
+
+			// Обработчики для кнопок диалога
+			document
+				.getElementById('saveSessionConfirmBtn')
+				.addEventListener('click', () => {
+					const sessionNameInput = document.getElementById('sessionNameInput');
+					const sessionName = sessionNameInput.value.trim();
+					if (!sessionName) {
+						alert('Пожалуйста, введите название сессии.');
+						return;
+					}
+
+					const selectedWindowIds = Array.from(
+						document.querySelectorAll('.window-checkbox:checked')
+					).map((checkbox) => parseInt(checkbox.value));
+
+					if (selectedWindowIds.length === 0) {
+						alert('Пожалуйста, выберите хотя бы одно окно для сохранения.');
+						return;
+					}
+
+					// Фильтруем выбранные окна
+					const selectedWindows = windows.filter((window) =>
+						selectedWindowIds.includes(window.id)
+					);
+
+					// Формируем объект сессии
+					const session = {
+						id: 'manual_' + Date.now(),
+						name: sessionName,
+						timestamp: Date.now(),
+						windows: selectedWindows.map((window) => ({
+							tabs: window.tabs.map((tab) => ({
+								title: tab.title,
+								url: tab.url,
+							})),
+						})),
+					};
+
+					// Сохраняем сессию
+					saveManualSession(session);
+
+					// Удаляем диалог
+					document.body.removeChild(overlay);
+				});
+
+			document
+				.getElementById('cancelSessionBtn')
+				.addEventListener('click', () => {
+					// Удаляем диалог
+					document.body.removeChild(overlay);
+				});
 		});
 	}
 
@@ -1251,7 +1732,7 @@ document.addEventListener('DOMContentLoaded', () => {
 		);
 	}
 
-	// --- Функции для вкладки "Планирование" ---
+	// --- Обработчики для вкладки "Планирование" ---
 	function attachScheduleTabEventListeners() {
 		console.log('Вкладка "Планирование" загружена.');
 
@@ -1423,32 +1904,22 @@ document.addEventListener('DOMContentLoaded', () => {
 						chrome.runtime.lastError
 					);
 				} else {
-					// Планируем будильник
+					// Планируем будильник через background.js
 					chrome.runtime.sendMessage(
 						{ action: 'scheduleSession', scheduledSession },
 						(response) => {
 							if (response && response.status === 'success') {
 								// Обновляем интерфейс
 								loadScheduledSessions();
-								alert('Планировка успешно добавлена.');
+								showNotification('Планировка', 'Планировка успешно добавлена.');
 							} else {
-								alert('Не удалось добавить планировку.');
+								showNotification('Ошибка', 'Не удалось добавить планировку.');
 							}
 						}
 					);
 				}
 			});
 		});
-	}
-
-	// Функция для проверки корректности URL
-	function isValidUrl(string) {
-		try {
-			new URL(string);
-			return true;
-		} catch (_) {
-			return false;
-		}
 	}
 
 	// Функция для загрузки запланированных сессий
@@ -1500,7 +1971,6 @@ document.addEventListener('DOMContentLoaded', () => {
 		chrome.storage.local.get(['scheduledSessions'], (result) => {
 			let scheduledSessions = result.scheduledSessions || [];
 			scheduledSessions = scheduledSessions.filter((s) => s.id !== scheduleId);
-
 			chrome.storage.local.set({ scheduledSessions }, () => {
 				if (chrome.runtime.lastError) {
 					console.error(
@@ -1508,16 +1978,16 @@ document.addEventListener('DOMContentLoaded', () => {
 						chrome.runtime.lastError
 					);
 				} else {
-					// Отменяем будильник
+					// Отменяем будильник через background.js
 					chrome.runtime.sendMessage(
 						{ action: 'cancelScheduledSession', scheduleId },
 						(response) => {
 							if (response && response.status === 'success') {
 								// Обновляем интерфейс
 								loadScheduledSessions();
-								alert('Планировка отменена.');
+								showNotification('Планировка', 'Планировка отменена.');
 							} else {
-								alert('Не удалось отменить планировку.');
+								showNotification('Ошибка', 'Не удалось отменить планировку.');
 							}
 						}
 					);
@@ -1526,526 +1996,24 @@ document.addEventListener('DOMContentLoaded', () => {
 		});
 	}
 
-	// Функция для загрузки сессий в выпадающий список
-	function loadSessionsForScheduling(sessionSelect) {
-		// Загрузка сессий из хранилища
-		chrome.storage.local.get(
-			['autoSessions', 'changeSessions', 'manualSessions'],
-			(result) => {
-				const autoSessions = result.autoSessions || [];
-				const changeSessions = result.changeSessions || [];
-				const manualSessions = result.manualSessions || [];
-				const allSessions = [
-					...autoSessions.map((s, index) => ({
-						...s,
-						type: 'autoSessions',
-						index,
-					})),
-					...changeSessions.map((s, index) => ({
-						...s,
-						type: 'changeSessions',
-						index,
-					})),
-					...manualSessions.map((s, index) => ({
-						...s,
-						type: 'manualSessions',
-						index,
-					})),
-				];
-
-				sessionSelect.innerHTML = '';
-
-				allSessions.forEach((session) => {
-					const option = document.createElement('option');
-					option.value = `${session.type}_${session.index}`;
-					option.textContent = `${
-						session.type === 'autoSessions'
-							? 'Авто'
-							: session.type === 'changeSessions'
-							? 'Изменение'
-							: 'Ручная'
-					} - ${formatTimestamp(session.timestamp)}`;
-					sessionSelect.appendChild(option);
-				});
-			}
-		);
-	}
-
-	// --- Функции для вкладки "Настройки" ---
-	function attachSettingsTabEventListeners() {
-		const backBtn = document.getElementById('backBtn');
-		const themeSwitch = document.getElementById('themeSwitch');
-		const notificationSwitch = document.getElementById('notificationSwitch');
-		const intervalInput = document.getElementById('intervalInput');
-		const importBtn = document.getElementById('importBtn');
-		const importFileInput = document.getElementById('importFileInput');
-		const exportBtn = document.getElementById('exportBtn');
-
-		// Инициализируем значения настроек
-		initializeSettings(themeSwitch, notificationSwitch, intervalInput);
-		// Настройки Ручных Сессий
-		const manualSessionsEnabledSwitch = document.getElementById(
-			'manualSessionsEnabledSwitch'
-		);
-		const manualSessionsMaxInput = document.getElementById(
-			'manualSessionsMaxInput'
-		);
-
-		if (manualSessionsEnabledSwitch) {
-			manualSessionsEnabledSwitch.addEventListener('change', () => {
-				const isEnabled = manualSessionsEnabledSwitch.checked;
-				chrome.storage.local.set({ manualSessionsEnabled: isEnabled }, () => {
-					console.log(`Manual sessions ${isEnabled ? 'enabled' : 'disabled'}`);
-					showNotification(
-						'Настройки Обновлены',
-						`Ручные сессии ${isEnabled ? 'включены' : 'отключены'}.`
-					);
-					loadSessions(); // Перезагружаем сессии, чтобы отразить изменения
-				});
-			});
-		}
-
-		if (manualSessionsMaxInput) {
-			manualSessionsMaxInput.addEventListener('change', () => {
-				let maxValue = parseInt(manualSessionsMaxInput.value, 10);
-				if (isNaN(maxValue) || maxValue < 0) {
-					maxValue = 0;
-				}
-				chrome.storage.local.set({ manualSessionsMax: maxValue }, () => {
-					console.log(`Manual sessions max set to: ${maxValue}`);
-					showNotification(
-						'Настройки Обновлены',
-						`Максимальное количество ручных сессий установлено на ${maxValue}.`
-					);
-				});
-			});
-		}
-
-		// Настройки Авто Сессий
-		const autoSessionsEnabledSwitch = document.getElementById(
-			'autoSessionsEnabledSwitch'
-		);
-		const autoSessionsMaxInput = document.getElementById(
-			'autoSessionsMaxInput'
-		);
-
-		if (autoSessionsEnabledSwitch) {
-			autoSessionsEnabledSwitch.addEventListener('change', () => {
-				const isEnabled = autoSessionsEnabledSwitch.checked;
-				chrome.storage.local.set({ autoSessionsEnabled: isEnabled }, () => {
-					console.log(`Auto sessions ${isEnabled ? 'enabled' : 'disabled'}`);
-					showNotification(
-						'Настройки Обновлены',
-						`Авто сессии ${isEnabled ? 'включены' : 'отключены'}.`
-					);
-					loadSessions();
-				});
-			});
-		}
-
-		if (autoSessionsMaxInput) {
-			autoSessionsMaxInput.addEventListener('change', () => {
-				let maxValue = parseInt(autoSessionsMaxInput.value, 10);
-				if (isNaN(maxValue) || maxValue < 0) {
-					maxValue = 0;
-				}
-				chrome.storage.local.set({ autoSessionsMax: maxValue }, () => {
-					console.log(`Auto sessions max set to: ${maxValue}`);
-					showNotification(
-						'Настройки Обновлены',
-						`Максимальное количество авто сессий установлено на ${maxValue}.`
-					);
-				});
-			});
-		}
-
-		// Настройки Сессий при Изменении Вкладок
-		const changeSessionsEnabledSwitch = document.getElementById(
-			'changeSessionsEnabledSwitch'
-		);
-		const changeSessionsMaxInput = document.getElementById(
-			'changeSessionsMaxInput'
-		);
-
-		if (changeSessionsEnabledSwitch) {
-			changeSessionsEnabledSwitch.addEventListener('change', () => {
-				const isEnabled = changeSessionsEnabledSwitch.checked;
-				chrome.storage.local.set({ changeSessionsEnabled: isEnabled }, () => {
-					console.log(`Change sessions ${isEnabled ? 'enabled' : 'disabled'}`);
-					showNotification(
-						'Настройки Обновлены',
-						`Сессии при изменении ${isEnabled ? 'включены' : 'отключены'}.`
-					);
-					loadSessions();
-				});
-			});
-		}
-
-		if (changeSessionsMaxInput) {
-			changeSessionsMaxInput.addEventListener('change', () => {
-				let maxValue = parseInt(changeSessionsMaxInput.value, 10);
-				if (isNaN(maxValue) || maxValue < 0) {
-					maxValue = 0;
-				}
-				chrome.storage.local.set({ changeSessionsMax: maxValue }, () => {
-					console.log(`Change sessions max set to: ${maxValue}`);
-					showNotification(
-						'Настройки Обновлены',
-						`Максимальное количество сессий при изменении установлено на ${maxValue}.`
-					);
-				});
-			});
-		}
-
-		// Обработчики для переключателей настроек
-		if (themeSwitch) {
-			themeSwitch.addEventListener('change', () => {
-				if (themeSwitch.checked) {
-					htmlElement.classList.add('dark-theme');
-					chrome.storage.local.set({ theme: 'dark' }, () => {
-						console.log('Theme set to dark');
-					});
+	// --- Функция для фильтрации сессий по запросу ---
+	function filterSessions(query) {
+		document.querySelectorAll('.session-item').forEach((item) => {
+			const sessionHeader = item.querySelector('.session-header span');
+			if (sessionHeader) {
+				const name = sessionHeader.textContent.toLowerCase();
+				if (name.includes(query.toLowerCase())) {
+					item.style.display = 'flex'; // Используем 'flex', чтобы сохранить расположение
 				} else {
-					htmlElement.classList.remove('dark-theme');
-					chrome.storage.local.set({ theme: 'light' }, () => {
-						console.log('Theme set to light');
-					});
-				}
-			});
-		}
-
-		if (notificationSwitch) {
-			notificationSwitch.addEventListener('change', () => {
-				const isEnabled = notificationSwitch.checked;
-				chrome.storage.local.set({ notificationsEnabled: isEnabled }, () => {
-					console.log(`Notifications ${isEnabled ? 'enabled' : 'disabled'}`);
-					showNotification(
-						'Настройки Обновлены',
-						`Push уведомления ${isEnabled ? 'включены' : 'отключены'}.`
-					);
-				});
-			});
-		}
-
-		if (intervalInput) {
-			intervalInput.addEventListener('change', () => {
-				let intervalValue = parseInt(intervalInput.value, 10);
-				console.log(`AutoBackup interval changed to: ${intervalValue}`);
-				if (intervalValue >= 1) {
-					chrome.storage.local.set(
-						{ autoBackupInterval: intervalValue },
-						() => {
-							showNotification(
-								'Настройки Обновлены',
-								`Интервал автосохранения установлен на ${intervalValue} минут.`
-							);
-						}
-					);
-				} else {
-					intervalInput.value = 10;
-					chrome.storage.local.set({ autoBackupInterval: 10 }, () => {
-						showNotification(
-							'Настройки Обновлены',
-							'Интервал автосохранения сброшен на значение по умолчанию (10 минут).'
-						);
-					});
-				}
-			});
-		}
-
-		if (importBtn && importFileInput) {
-			// Обработчик для кнопки импорта
-			importBtn.addEventListener('click', () => {
-				console.log('Import button clicked');
-				importFileInput.click();
-			});
-
-			// Обработчик для выбора файла импорта
-			importFileInput.addEventListener('change', handleImportFile);
-		}
-
-		if (exportBtn) {
-			// Обработчик для кнопки экспорта
-			exportBtn.addEventListener('click', () => {
-				console.log('Export button clicked');
-				exportSessions();
-			});
-		}
-	}
-
-	// Инициализация настроек из хранилища
-	function initializeSettings(themeSwitch, notificationSwitch, intervalInput) {
-		// Тема
-		chrome.storage.local.get(['theme'], (result) => {
-			const savedTheme = result.theme || 'light';
-			console.log(`Initializing theme: ${savedTheme}`);
-			if (savedTheme === 'dark') {
-				htmlElement.classList.add('dark-theme');
-				if (themeSwitch) themeSwitch.checked = true;
-			} else {
-				htmlElement.classList.remove('dark-theme');
-				if (themeSwitch) themeSwitch.checked = false;
-			}
-		});
-
-		// Уведомления
-		chrome.storage.local.get(['notificationsEnabled'], (result) => {
-			const notificationsEnabled = result.notificationsEnabled !== false;
-			if (notificationSwitch) notificationSwitch.checked = notificationsEnabled;
-			console.log(`Initializing notifications: ${notificationsEnabled}`);
-		});
-
-		// Интервал
-		chrome.storage.local.get(['autoBackupInterval'], (result) => {
-			const interval = result.autoBackupInterval || 10;
-			if (intervalInput) intervalInput.value = interval;
-			console.log(`Initializing autoBackupInterval: ${interval}`);
-		});
-		// Настройки Ручных Сессий
-		const manualSessionsEnabledSwitch = document.getElementById(
-			'manualSessionsEnabledSwitch'
-		);
-		const manualSessionsMaxInput = document.getElementById(
-			'manualSessionsMaxInput'
-		);
-		chrome.storage.local.get(
-			['manualSessionsEnabled', 'manualSessionsMax'],
-			(result) => {
-				const manualSessionsEnabled = result.manualSessionsEnabled !== false;
-				if (manualSessionsEnabledSwitch)
-					manualSessionsEnabledSwitch.checked = manualSessionsEnabled;
-				const manualSessionsMax = result.manualSessionsMax;
-				if (manualSessionsMaxInput)
-					manualSessionsMaxInput.value =
-						manualSessionsMax !== undefined ? manualSessionsMax : 5;
-			}
-		);
-
-		// Настройки Авто Сессий
-		const autoSessionsEnabledSwitch = document.getElementById(
-			'autoSessionsEnabledSwitch'
-		);
-		const autoSessionsMaxInput = document.getElementById(
-			'autoSessionsMaxInput'
-		);
-		chrome.storage.local.get(
-			['autoSessionsEnabled', 'autoSessionsMax'],
-			(result) => {
-				const autoSessionsEnabled = result.autoSessionsEnabled !== false;
-				if (autoSessionsEnabledSwitch)
-					autoSessionsEnabledSwitch.checked = autoSessionsEnabled;
-				const autoSessionsMax = result.autoSessionsMax;
-				if (autoSessionsMaxInput)
-					autoSessionsMaxInput.value =
-						autoSessionsMax !== undefined ? autoSessionsMax : 5;
-			}
-		);
-
-		// Настройки Сессий при Изменении Вкладок
-		const changeSessionsEnabledSwitch = document.getElementById(
-			'changeSessionsEnabledSwitch'
-		);
-		const changeSessionsMaxInput = document.getElementById(
-			'changeSessionsMaxInput'
-		);
-		chrome.storage.local.get(
-			['changeSessionsEnabled', 'changeSessionsMax'],
-			(result) => {
-				const changeSessionsEnabled = result.changeSessionsEnabled !== false;
-				if (changeSessionsEnabledSwitch)
-					changeSessionsEnabledSwitch.checked = changeSessionsEnabled;
-				const changeSessionsMax = result.changeSessionsMax;
-				if (changeSessionsMaxInput)
-					changeSessionsMaxInput.value =
-						changeSessionsMax !== undefined ? changeSessionsMax : 5;
-			}
-		);
-	}
-
-	// --- Функции для экспорта всех сессий ---
-	function exportSessions() {
-		console.log('Exporting all sessions');
-		chrome.storage.local.get(
-			['autoSessions', 'changeSessions', 'manualSessions'],
-			(result) => {
-				const data = {
-					autoSessions: result.autoSessions || [],
-					changeSessions: result.changeSessions || [],
-					manualSessions: result.manualSessions || [],
-				};
-
-				const jsonStr = JSON.stringify(data, null, 2);
-				const blob = new Blob([jsonStr], { type: 'application/json' });
-				const url = URL.createObjectURL(blob);
-				const downloadLink = document.createElement('a');
-				downloadLink.href = url;
-				const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-				downloadLink.download = `sessions_${timestamp}.json`;
-				document.body.appendChild(downloadLink);
-				downloadLink.click();
-				document.body.removeChild(downloadLink);
-				URL.revokeObjectURL(url);
-				showNotification('Экспорт', 'Все сессии успешно экспортированы.');
-			}
-		);
-	}
-
-	// --- Функция для отображения уведомлений ---
-	function showNotification(title, message) {
-		console.log(`Showing notification: ${title} - ${message}`);
-		chrome.storage.local.get(['notificationsEnabled'], (result) => {
-			if (result.notificationsEnabled !== false) {
-				if (chrome.notifications && chrome.notifications.create) {
-					chrome.notifications.create(
-						'',
-						{
-							type: 'basic',
-							iconUrl: 'icons/icon48.png',
-							title: title,
-							message: message,
-						},
-						(notificationId) => {
-							if (chrome.runtime.lastError) {
-								console.error('Notification Error:', chrome.runtime.lastError);
-							} else {
-								console.log('Notification shown with ID:', notificationId);
-							}
-						}
-					);
-				} else {
-					alert(`${title}: ${message}`);
+					item.style.display = 'none';
 				}
 			}
 		});
 	}
 
-	// --- Функция для экранирования HTML-сущностей ---
-	function escapeHtml(text) {
-		const map = {
-			'&': '&amp;',
-			'<': '&lt;',
-			'>': '&gt;',
-			'"': '&quot;',
-			"'": '&#039;',
-		};
-		return text.replace(/[&<>"']/g, function (m) {
-			return map[m];
-		});
-	}
+	// --- Функция для сохранения группы ---
+	// Уже определена выше
 
-	// --- Функция для обработки файла импорта ---
-	function handleImportFile(event) {
-		const file = event.target.files[0];
-		if (!file) {
-			console.log('No file selected for import');
-			showNotification('Импорт', 'Файл не выбран.');
-			return;
-		}
-
-		console.log(`Importing file: ${file.name}`);
-		const reader = new FileReader();
-		reader.onload = (e) => {
-			try {
-				const importedData = JSON.parse(e.target.result);
-				console.log('Imported data:', importedData);
-
-				// Проверка структуры данных
-				if (
-					(!importedData.autoSessions ||
-						!Array.isArray(importedData.autoSessions)) &&
-					(!importedData.changeSessions ||
-						!Array.isArray(importedData.changeSessions)) &&
-					(!importedData.manualSessions ||
-						!Array.isArray(importedData.manualSessions))
-				) {
-					throw new Error('Неверный формат данных сессий.');
-				}
-
-				// Объединение существующих сессий с импортированными
-				chrome.storage.local.get(
-					['autoSessions', 'changeSessions', 'manualSessions'],
-					(result) => {
-						let existingAuto = result.autoSessions || [];
-						let existingChange = result.changeSessions || [];
-						let existingManual = result.manualSessions || [];
-
-						// Импортируем autoSessions, если они есть
-						if (
-							importedData.autoSessions &&
-							Array.isArray(importedData.autoSessions)
-						) {
-							existingAuto = [...existingAuto, ...importedData.autoSessions];
-							// Ограничение до MAX_SESSIONS
-							if (existingAuto.length > MAX_SESSIONS) {
-								existingAuto = existingAuto.slice(
-									existingAuto.length - MAX_SESSIONS
-								);
-							}
-						}
-
-						// Импортируем changeSessions, если они есть
-						if (
-							importedData.changeSessions &&
-							Array.isArray(importedData.changeSessions)
-						) {
-							existingChange = [
-								...existingChange,
-								...importedData.changeSessions,
-							];
-							// Ограничение до MAX_SESSIONS
-							if (existingChange.length > MAX_SESSIONS) {
-								existingChange = existingChange.slice(
-									existingChange.length - MAX_SESSIONS
-								);
-							}
-						}
-
-						// Импортируем manualSessions, если они есть
-						if (
-							importedData.manualSessions &&
-							Array.isArray(importedData.manualSessions)
-						) {
-							existingManual = [
-								...existingManual,
-								...importedData.manualSessions,
-							];
-							// Ограничение до MAX_SESSIONS
-							if (existingManual.length > MAX_SESSIONS) {
-								existingManual = existingManual.slice(
-									existingManual.length - MAX_SESSIONS
-								);
-							}
-						}
-
-						chrome.storage.local.set(
-							{
-								autoSessions: existingAuto,
-								changeSessions: existingChange,
-								manualSessions: existingManual,
-							},
-							() => {
-								if (chrome.runtime.lastError) {
-									console.error(
-										'Error importing sessions:',
-										chrome.runtime.lastError
-									);
-									showNotification(
-										'Ошибка Импорта',
-										'Не удалось импортировать сессию.'
-									);
-								} else {
-									loadTab('sessions'); // Перезагружаем вкладку "Сессии"
-									showNotification('Импорт', 'Сессии успешно импортированы.');
-								}
-							}
-						);
-					}
-				);
-			} catch (error) {
-				console.error('Error parsing imported file:', error);
-				showNotification('Ошибка Импорта', 'Неверный формат файла.');
-			}
-		};
-		reader.readAsText(file);
-	}
+	// --- Остальные функции ---
+	// Все остальные функции уже определены и не дублируются
 });
