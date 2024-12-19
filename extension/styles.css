@@ -784,3 +784,285 @@ p {
 .dialog-content .button {
 	margin-right: 10px;
 }
+/* --- Стили для вкладки "Планирование" --- */
+
+/* Контейнер планирования */
+#schedule .schedule-container {
+	display: flex;
+	flex-direction: column;
+	gap: 20px;
+	padding: 20px;
+}
+
+/* Форма планирования */
+#schedule .schedule-form {
+	display: flex;
+	flex-direction: column;
+	gap: 15px;
+	background-color: var(--card-background);
+	padding: 20px;
+	border-radius: 12px;
+	border: 1px solid var(--border-color);
+	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+	transition: background-color 0.3s, border-color 0.3s, box-shadow 0.3s;
+}
+
+#schedule .schedule-form:hover {
+	background-color: var(--session-item-hover-bg);
+	box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* Радио-кнопки выбора типа планировки */
+.schedule-option {
+	display: flex;
+	gap: 20px;
+}
+
+.schedule-option label {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	cursor: pointer;
+	font-weight: 500;
+	color: var(--text-color);
+}
+
+.schedule-option input[type='radio'] {
+	cursor: pointer;
+}
+
+/* Опции для выбора сессии */
+#sessionScheduleOptions,
+#customScheduleOptions {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+}
+
+#schedule .schedule-form label[for='sessionSelect'],
+#schedule .schedule-form label[for='scheduleDateTime'] {
+	font-weight: 500;
+	color: var(--text-color);
+}
+
+/* Выбор сессии */
+#sessionSelect {
+	padding: 10px;
+	border: 1px solid var(--input-border);
+	border-radius: 6px;
+	background-color: var(--input-background);
+	color: var(--text-color);
+	transition: border-color 0.3s, box-shadow 0.3s;
+}
+
+#sessionSelect:focus {
+	outline: none;
+	border-color: var(--primary-color);
+	box-shadow: 0 0 5px rgba(52, 152, 219, 0.5);
+}
+
+/* Ввод даты и времени */
+#scheduleDateTime {
+	padding: 10px;
+	border: 1px solid var(--input-border);
+	border-radius: 6px;
+	background-color: var(--input-background);
+	color: var(--text-color);
+	transition: border-color 0.3s, box-shadow 0.3s;
+}
+
+#scheduleDateTime:focus {
+	outline: none;
+	border-color: var(--primary-color);
+	box-shadow: 0 0 5px rgba(52, 152, 219, 0.5);
+}
+
+/* Кнопка добавления планировки */
+#addScheduleBtn {
+	align-self: flex-start;
+	background-color: var(--secondary-color);
+	color: white;
+	padding: 10px 20px;
+	font-size: 14px;
+	border: none;
+	border-radius: 30px;
+	cursor: pointer;
+	transition: background-color 0.3s, transform 0.2s;
+}
+
+#addScheduleBtn:hover {
+	background-color: var(--secondary-hover);
+	transform: translateY(-2px);
+}
+
+#addScheduleBtn:active {
+	transform: translateY(0);
+}
+
+/* Список запланированных сессий */
+.scheduled-list {
+	background-color: var(--card-background);
+	padding: 15px;
+	border-radius: 12px;
+	border: 1px solid var(--border-color);
+	max-height: 300px;
+	overflow-y: auto;
+	transition: background-color 0.3s, border-color 0.3s;
+}
+
+.scheduled-list h3 {
+	margin-top: 0;
+	margin-bottom: 10px;
+	color: var(--text-color);
+	border-bottom: 1px solid var(--border-color);
+	padding-bottom: 5px;
+}
+
+#scheduledSessionsList {
+	list-style: none;
+	padding: 0;
+	margin: 0;
+}
+
+#scheduledSessionsList li {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	padding: 10px 0;
+	border-bottom: 1px solid var(--border-color);
+	transition: background-color 0.3s;
+}
+
+#scheduledSessionsList li:last-child {
+	border-bottom: none;
+}
+
+#scheduledSessionsList li:hover {
+	background-color: var(--session-item-hover-bg);
+}
+
+/* Описание запланированной сессии */
+#scheduledSessionsList li span {
+	font-weight: 500;
+	color: var(--text-color);
+}
+
+/* Кнопка отмены запланированной сессии */
+#scheduledSessionsList li .button-small {
+	background-color: var(--primary-color);
+	color: white;
+	padding: 6px 12px;
+	border: none;
+	border-radius: 6px;
+	cursor: pointer;
+	transition: background-color 0.3s, transform 0.2s;
+}
+
+#scheduledSessionsList li .button-small:hover {
+	background-color: var(--primary-hover);
+	transform: translateY(-2px);
+}
+
+#scheduledSessionsList li .button-small:active {
+	transform: translateY(0);
+}
+
+/* Ввод пользовательских ссылок */
+#customUrlsContainer .url-input-group {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+}
+
+#customUrlsContainer .url-input-group input[type='url'] {
+	flex-grow: 1;
+	padding: 8px;
+	border: 1px solid var(--input-border);
+	border-radius: 6px;
+	background-color: var(--input-background);
+	color: var(--text-color);
+	transition: border-color 0.3s, box-shadow 0.3s;
+}
+
+#customUrlsContainer .url-input-group input[type='url']:focus {
+	outline: none;
+	border-color: var(--primary-color);
+	box-shadow: 0 0 5px rgba(52, 152, 219, 0.5);
+}
+
+#customUrlsContainer .url-input-group .remove-url-btn {
+	background-color: #e74c3c;
+	color: white;
+	border: none;
+	border-radius: 50%;
+	width: 30px;
+	height: 30px;
+	cursor: pointer;
+	font-size: 18px;
+	line-height: 0;
+	transition: background-color 0.3s, transform 0.2s;
+}
+
+#customUrlsContainer .url-input-group .remove-url-btn:hover {
+	background-color: #c0392b;
+	transform: scale(1.1);
+}
+
+#customUrlsContainer .url-input-group .remove-url-btn:active {
+	transform: scale(1);
+}
+
+/* Кнопка добавления новой ссылки */
+#addUrlBtn {
+	align-self: flex-start;
+	background-color: var(--primary-color);
+	color: white;
+	padding: 6px 12px;
+	border: none;
+	border-radius: 30px;
+	cursor: pointer;
+	transition: background-color 0.3s, transform 0.2s;
+}
+
+#addUrlBtn:hover {
+	background-color: var(--primary-hover);
+	transform: translateY(-2px);
+}
+
+#addUrlBtn:active {
+	transform: translateY(0);
+}
+
+/* Адаптивные стили для мобильных устройств */
+@media (max-width: 420px) {
+	main {
+		width: 100%;
+		height: 100%;
+		border-radius: 0;
+	}
+
+	#contentContainer {
+		width: 100%;
+		margin: 0;
+		border-radius: 0;
+	}
+
+	.schedule-container {
+		padding: 10px;
+	}
+
+	#schedule .schedule-form,
+	.scheduled-list {
+		padding: 15px;
+	}
+
+	.schedule-option {
+		flex-direction: column;
+		gap: 10px;
+	}
+
+	#addScheduleBtn,
+	#addUrlBtn {
+		width: 100%;
+	}
+}
