@@ -261,30 +261,52 @@ p {
 /* Контролы сессий */
 .sessions-controls {
 	display: flex;
-	align-items: center;
+	flex-direction: column;
+	gap: 10px;
 	width: 100%;
 }
 
-.sessions-controls input[type='text'] {
+.sessions-controls-top {
+	display: flex;
+	flex-direction: row;
+	align-items: center;
+	gap: 10px;
+	width: 100%;
+}
+
+.sessions-controls-top input[type='text'] {
 	flex-grow: 1;
 	padding: 10px;
 	border: 1px solid var(--input-border);
 	border-radius: 30px;
-	margin-right: 10px;
 	background-color: var(--input-background);
 	color: var(--text-color);
 	transition: background-color 0.3s, border-color 0.3s, box-shadow 0.3s;
 }
 
-.sessions-controls input[type='text']:focus {
+.sessions-controls-top input[type='text']:focus {
 	outline: none;
 	border-color: var(--primary-color);
 	box-shadow: 0 0 5px rgba(52, 152, 219, 0.5); /* Добавлена тень при фокусе */
 }
 
-.sessions-controls input[type='text']::placeholder {
+.sessions-controls-top input[type='text']::placeholder {
 	color: #7f8c8d; /* Более светлый серый для плейсхолдера */
 	opacity: 1;
+}
+
+.sessions-controls-top .button-small {
+	padding: 8px 16px;
+}
+
+.sessions-controls .button {
+	width: 100%;
+	padding: 10px 20px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 5px;
+	margin-top: 10px;
 }
 
 /* Контейнер сессий */
@@ -760,6 +782,7 @@ p {
 	justify-content: center;
 	z-index: 1000;
 }
+
 .save-session-dialog {
 	background: #fff;
 	padding: 20px;
@@ -768,22 +791,27 @@ p {
 	max-height: 80%;
 	overflow-y: auto;
 }
+
 .dialog-content h2 {
 	margin-top: 0;
 }
+
 .dialog-content label {
 	display: block;
 	margin-bottom: 8px;
 }
+
 .dialog-content input[type='text'] {
 	width: 100%;
 	padding: 8px;
 	margin-bottom: 12px;
 	box-sizing: border-box;
 }
+
 .dialog-content .button {
 	margin-right: 10px;
 }
+
 /* --- Стили для вкладки "Планирование" --- */
 
 /* Контейнер планирования */
@@ -1033,7 +1061,6 @@ p {
 	transform: translateY(0);
 }
 
-/* Адаптивные стили для мобильных устройств */
 @media (max-width: 420px) {
 	main {
 		width: 100%;
@@ -1065,4 +1092,8 @@ p {
 	#addUrlBtn {
 		width: 100%;
 	}
+
+	/* .sessions-controls-top .button-small {
+		width: 100%;
+	} */
 }

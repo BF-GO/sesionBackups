@@ -43,18 +43,28 @@
 								<h1>Сессии</h1>
 							</div>
 							<div class="sessions-controls">
-								<input
-									type="text"
-									id="searchInput"
-									placeholder="Поиск сессий..."
-								/>
-								<button id="createGroupBtn" class="button-small">
+								<div class="sessions-controls-top">
+									<input
+										type="text"
+										id="searchInput"
+										placeholder="Поиск сессий..."
+									/>
+									<button id="createGroupBtn" class="button-small">
+										<img
+											src="icons/add.png"
+											alt="Создать Группу"
+											class="button-icon"
+										/>
+										Создать Группу
+									</button>
+								</div>
+								<button id="saveBtn" class="button">
 									<img
-										src="icons/add.png"
-										alt="Создать Группу"
+										src="icons/save.png"
+										alt="Сохранить"
 										class="button-icon"
 									/>
-									Создать Группу
+									Сохранить Текущую Сессию
 								</button>
 							</div>
 
@@ -147,16 +157,6 @@
 									<h3>Пользовательские Группы</h3>
 									<p>Нет доступных групп</p>
 								</div>
-							</div>
-							<div class="controls">
-								<button id="saveBtn" class="button">
-									<img
-										src="icons/save.png"
-										alt="Сохранить"
-										class="button-icon"
-									/>
-									Сохранить Текущую Сессию
-								</button>
 							</div>
 						</div>
 					</div>
@@ -342,6 +342,15 @@
 									value="5"
 								/>
 							</div>
+							<!-- Настройки Пользовательских Групп -->
+							<div class="setting-item">
+								<h3>Настройки Пользовательских Групп</h3>
+								<label>
+									<span>Включить Пользовательские Группы:</span>
+									<input type="checkbox" id="customGroupsEnabledSwitch" />
+								</label>
+							</div>
+
 							<div class="settings-items">
 								<!-- Интервал Автобэкапа -->
 								<div class="setting-item">

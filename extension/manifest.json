@@ -1,7 +1,7 @@
 {
 	"manifest_version": 3,
 	"name": "Session Saver",
-	"version": "1.7",
+	"version": "2.1",
 	"description": "Save and restore all your browser tabs and windows.",
 	"permissions": ["tabs", "storage", "windows", "alarms", "notifications"],
 	"background": {

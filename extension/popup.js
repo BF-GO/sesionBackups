@@ -245,6 +245,25 @@ document.addEventListener('DOMContentLoaded', () => {
 			});
 		}
 
+		// Обработчик переключателя Пользовательских Групп
+		const customGroupsEnabledSwitch = document.getElementById(
+			'customGroupsEnabledSwitch'
+		);
+
+		if (customGroupsEnabledSwitch) {
+			customGroupsEnabledSwitch.addEventListener('change', () => {
+				const isEnabled = customGroupsEnabledSwitch.checked;
+				chrome.storage.local.set({ customGroupsEnabled: isEnabled }, () => {
+					console.log(`Custom groups ${isEnabled ? 'enabled' : 'disabled'}`);
+					showNotification(
+						'Настройки Обновлены',
+						`Пользовательские группы ${isEnabled ? 'включены' : 'отключены'}.`
+					);
+					loadSessions(); // Перезагружаем сессии, чтобы отразить изменения
+				});
+			});
+		}
+
 		// Обработчик переключателя Темы
 		if (themeSwitch) {
 			themeSwitch.addEventListener('change', () => {
@@ -415,6 +434,18 @@ document.addEventListener('DOMContentLoaded', () => {
 						changeSessionsMax !== undefined ? changeSessionsMax : 5;
 			}
 		);
+
+		// Настройки Пользовательских Групп
+		chrome.storage.local.get(['customGroupsEnabled'], (result) => {
+			const customGroupsEnabled = result.customGroupsEnabled !== false;
+			const customGroupsSwitch = document.getElementById(
+				'customGroupsEnabledSwitch'
+			);
+			if (customGroupsSwitch) {
+				customGroupsSwitch.checked = customGroupsEnabled;
+				console.log(`Initializing custom groups: ${customGroupsEnabled}`);
+			}
+		});
 	}
 
 	// --- Функции для вкладки "Сессии" ---
@@ -583,11 +614,13 @@ document.addEventListener('DOMContentLoaded', () => {
 				'manualSessionsEnabled',
 				'autoSessionsEnabled',
 				'changeSessionsEnabled',
+				'customGroupsEnabled',
 			],
 			(result) => {
 				const manualSessionsEnabled = result.manualSessionsEnabled !== false;
 				const autoSessionsEnabled = result.autoSessionsEnabled !== false;
 				const changeSessionsEnabled = result.changeSessionsEnabled !== false;
+				const customGroupsEnabled = result.customGroupsEnabled !== false;
 
 				// Получаем ссылки на элементы DOM
 				const manualSessionsDiv = document.getElementById('manualSessions');
@@ -631,17 +664,29 @@ document.addEventListener('DOMContentLoaded', () => {
 					}
 				}
 
-				// Обрабатываем пользовательские группы (предполагается, что они всегда отображаются)
+				// Обрабатываем пользовательские группы
 				if (customGroupsDiv) {
-					customGroupsDiv.style.display = 'block';
-					const groups = result.groups || [];
-					console.log(`Loaded groups: ${groups.length}`);
-					populateSessionList('customGroups', groups);
+					if (customGroupsEnabled) {
+						customGroupsDiv.style.display = 'block';
+						const groups = result.groups || [];
+						console.log(`Loaded groups: ${groups.length}`);
+						populateSessionList('customGroups', groups);
+					} else {
+						customGroupsDiv.style.display = 'none';
+					}
 				}
 
-				// Загружаем группы и заполняем выпадающие списки
-				loadGroups();
-				populateSessionsForGroupCreation();
+				if (customGroupsEnabled) {
+					loadGroups();
+					populateSessionsForGroupCreation();
+				} else {
+					const sessionSelectForGroup = document.getElementById(
+						'sessionSelectForGroup'
+					);
+					if (sessionSelectForGroup) {
+						sessionSelectForGroup.innerHTML = '';
+					}
+				}
 			}
 		);
 	}
@@ -1437,7 +1482,9 @@ document.addEventListener('DOMContentLoaded', () => {
 					(!importedData.changeSessions ||
 						!Array.isArray(importedData.changeSessions)) &&
 					(!importedData.manualSessions ||
-						!Array.isArray(importedData.manualSessions))
+						!Array.isArray(importedData.manualSessions)) &&
+					(!importedData.customGroups ||
+						!Array.isArray(importedData.customGroups))
 				) {
 					throw new Error('Неверный формат данных сессий.');
 				}
@@ -1446,11 +1493,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
 				// Объединение существующих сессий с импортированными
 				chrome.storage.local.get(
-					['autoSessions', 'changeSessions', 'manualSessions'],
+					['autoSessions', 'changeSessions', 'manualSessions', 'groups'],
 					(result) => {
 						let existingAuto = result.autoSessions || [];
 						let existingChange = result.changeSessions || [];
 						let existingManual = result.manualSessions || [];
+						let existingGroups = result.groups || [];
 
 						// Импортируем autoSessions, если они есть
 						if (
@@ -1500,11 +1548,27 @@ document.addEventListener('DOMContentLoaded', () => {
 							}
 						}
 
+						if (
+							importedData.customGroups &&
+							Array.isArray(importedData.customGroups)
+						) {
+							existingGroups = [
+								...existingGroups,
+								...importedData.customGroups,
+							];
+							if (existingGroups.length > MAX_SESSIONS) {
+								existingGroups = existingGroups.slice(
+									existingGroups.length - MAX_SESSIONS
+								);
+							}
+						}
+
 						chrome.storage.local.set(
 							{
 								autoSessions: existingAuto,
 								changeSessions: existingChange,
 								manualSessions: existingManual,
+								groups: existingGroups,
 							},
 							() => {
 								if (chrome.runtime.lastError) {
